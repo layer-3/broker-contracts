@@ -29,4 +29,3 @@ contract BrokerTokenTest is Test {
         assertEq(token.balanceOf(deployer), TOKEN_SUPPLY);
     }
 }
-
