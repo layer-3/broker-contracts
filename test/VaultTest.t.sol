@@ -23,7 +23,7 @@ contract VaultTest is Test {
     uint256 ethBalance = 1 ether;
     uint256 token1Balance = 42e6;
 
-    function setUp() public virtual {
+    function setUp() public {
         mockAuthorizer = new MockAuthorize();
         vault = new Vault(admin);
 
@@ -108,10 +108,6 @@ contract VaultTest_deposit is VaultTest {
 }
 
 contract VaultTest_withdraw is VaultTest {
-    function setUp() public override {
-        super.setUp();
-    }
-
     function test_withdrawERC20() public {
         uint256 depositAmount = 42e5;
         uint256 withdrawAmount = 42e4;

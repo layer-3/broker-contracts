@@ -20,7 +20,7 @@ contract TimeRangeAuthorizer is IAuthorize, AccessControl {
         endDate = _endDate;
     }
 
-    function authorize(address owner, address token, uint256 amount) external view override returns (bool) {
+    function authorize(address, address, uint256) external view override returns (bool) {
         return block.timestamp < startDate || block.timestamp > endDate;
     }
 
