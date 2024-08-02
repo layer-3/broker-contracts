@@ -27,8 +27,11 @@ contract BrokerTokenFactory is Ownable {
      * @param symbol Symbol of the Token.
      * @param supply Maximum supply of the Token.
      */
-    function createBrokerToken(string memory name, string memory symbol, uint256 supply) external onlyOwner {
-        BrokerToken token = new BrokerToken(name, symbol, supply);
+    function createBrokerToken(string memory name, string memory symbol, uint8 decimals, uint256 supply)
+        external
+        onlyOwner
+    {
+        BrokerToken token = new BrokerToken(name, symbol, decimals, supply);
         brokerTokens.push(address(token));
         emit BrokerTokenCreated(address(token));
     }
