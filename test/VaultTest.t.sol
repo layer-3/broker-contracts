@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@clearsync/contracts/test/TestERC20.sol";
-import "@openzeppelin/contracts/access/IAccessControl.sol";
-
 import "forge-std/Test.sol";
-import "forge-std/console.sol";
-
 import "../src/Vault.sol";
-import "../src/test/MockAuthorize.sol";
+import "./MockAuthorize.sol";
+import "./TestERC20.sol";
 
 contract VaultTest is Test {
     Vault vault;
@@ -16,19 +12,16 @@ contract VaultTest is Test {
     TestERC20 token2;
     MockAuthorize mockAuthorizer;
 
-    address admin = address(1);
-    address withdrawer = address(2);
-    address someone = address(3);
+    address owner = address(1);
+    address someone = address(2);
 
     uint256 ethBalance = 1 ether;
     uint256 token1Balance = 42e6;
 
     function setUp() public {
+        vm.startPrank(owner);
         mockAuthorizer = new MockAuthorize();
-        vault = new Vault(admin);
-
-        // Ensure the admin sets the authorizer
-        vm.startPrank(admin);
+        vault = new Vault();
         vault.setAuthorizer(mockAuthorizer);
         vm.stopPrank();
 
@@ -37,16 +30,7 @@ contract VaultTest is Test {
         token1.mint(address(vault), token1Balance);
         vm.deal(address(vault), ethBalance);
     }
-}
 
-contract VaultTest_constructor is VaultTest {
-    function test_constructor() public {
-        assertTrue(vault.hasRole(vault.DEFAULT_ADMIN_ROLE(), admin));
-        assertTrue(vault.hasRole(vault.ADMIN_ROLE(), admin));
-    }
-}
-
-contract VaultTest_receive is VaultTest {
     function test_receive() public {
         uint256 amount = 42e5;
         vm.deal(someone, amount);
@@ -54,9 +38,7 @@ contract VaultTest_receive is VaultTest {
         payable(address(vault)).transfer(amount);
         assertEq(address(vault).balance, ethBalance + amount);
     }
-}
 
-contract VaultTest_deposit is VaultTest {
     function test_successEth() public {
         uint256 amount = 42e5;
         vm.deal(someone, amount);
@@ -105,9 +87,7 @@ contract VaultTest_deposit is VaultTest {
         vm.prank(someone);
         vault.deposit(address(token1), amount);
     }
-}
 
-contract VaultTest_withdraw is VaultTest {
     function test_withdrawERC20() public {
         uint256 depositAmount = 42e5;
         uint256 withdrawAmount = 42e4;
@@ -168,7 +148,7 @@ contract VaultTest_withdraw is VaultTest {
         vault.withdraw(address(token1), token1Balance);
     }
 
-    function test_emitsEvent() public {
+    function test_emitsEventWithdraw() public {
         uint256 depositAmount = 42e5;
         uint256 withdrawAmount = 42e4;
 

@@ -2,20 +2,22 @@
 pragma solidity ^0.8.0;
 
 import "./interfaces/IAuthorize.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract TimeRangeAuthorizer is IAuthorize, AccessControl {
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-
+contract TimeRangeAuthorizer is IAuthorize {
+    address public owner;
     uint256 public startDate;
     uint256 public endDate;
 
     event AuthorizationUpdated(uint256 newStartDate, uint256 newEndDate);
 
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not the contract owner");
+        _;
+    }
+
     constructor(uint256 _startDate, uint256 _endDate) {
         require(_startDate < _endDate, "Start date must be before end date");
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(ADMIN_ROLE, msg.sender);
+        owner = msg.sender;
         startDate = _startDate;
         endDate = _endDate;
     }
@@ -24,7 +26,7 @@ contract TimeRangeAuthorizer is IAuthorize, AccessControl {
         return block.timestamp < startDate || block.timestamp > endDate;
     }
 
-    function resetDates(uint256 newStartDate, uint256 newEndDate) external onlyRole(ADMIN_ROLE) {
+    function resetDates(uint256 newStartDate, uint256 newEndDate) external onlyOwner {
         require(newStartDate < newEndDate, "New start date must be before new end date");
         startDate = newStartDate;
         endDate = newEndDate;

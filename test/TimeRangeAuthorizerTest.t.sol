@@ -3,11 +3,10 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 import "../src/TimeRangeAuthorizer.sol";
-import "@openzeppelin/contracts/access/IAccessControl.sol";
 
 contract TimeRangeAuthorizerTest is Test {
     TimeRangeAuthorizer authorizer;
-    address admin = address(1);
+    address owner = address(1);
     address user = address(2);
     address token = address(3);
     uint256 amount = 100;
@@ -16,7 +15,7 @@ contract TimeRangeAuthorizerTest is Test {
     uint256 endDate = block.timestamp + 2000;
 
     function setUp() public {
-        vm.startPrank(admin);
+        vm.startPrank(owner);
         authorizer = new TimeRangeAuthorizer(startDate, endDate);
         vm.stopPrank();
     }
@@ -38,7 +37,7 @@ contract TimeRangeAuthorizerTest is Test {
     }
 
     function test_resetDates() public {
-        vm.startPrank(admin);
+        vm.startPrank(owner);
         uint256 newStartDate = block.timestamp + 3000;
         uint256 newEndDate = block.timestamp + 4000;
         authorizer.resetDates(newStartDate, newEndDate);
@@ -47,35 +46,36 @@ contract TimeRangeAuthorizerTest is Test {
         assertEq(authorizer.startDate(), newStartDate);
         assertEq(authorizer.endDate(), newEndDate);
 
+        // Before newStartDate
+        vm.warp(newStartDate - 1);
         assertEq(authorizer.authorize(user, token, amount), true);
 
+        // At newStartDate
         vm.warp(newStartDate);
         assertEq(authorizer.authorize(user, token, amount), false);
 
+        // During the new time range
         vm.warp(newStartDate + 1);
         assertEq(authorizer.authorize(user, token, amount), false);
 
+        // At newEndDate
         vm.warp(newEndDate);
         assertEq(authorizer.authorize(user, token, amount), false);
 
+        // After newEndDate
         vm.warp(newEndDate + 1);
         assertEq(authorizer.authorize(user, token, amount), true);
     }
 
-    function test_resetDatesNotAdmin() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                address(user),
-                authorizer.ADMIN_ROLE()
-            )
-        );
+
+    function test_resetDatesNotOwner() public {
+        vm.expectRevert("Not the contract owner");
         vm.prank(user);
         authorizer.resetDates(block.timestamp + 3000, block.timestamp + 4000);
     }
 
     function test_resetDatesInvalid() public {
-        vm.startPrank(admin);
+        vm.startPrank(owner);
         uint256 newStartDate = block.timestamp + 4000;
         uint256 newEndDate = block.timestamp + 3000;
 
