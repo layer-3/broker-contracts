@@ -2,12 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import "../src/Vault.sol";
+import "../src/LiteVault.sol";
 import "./MockAuthorize.sol";
 import "./TestERC20.sol";
 
-contract VaultTest is Test {
-    Vault vault;
+contract LiteVaultTest is Test {
+    LiteVault vault;
     TestERC20 token1;
     TestERC20 token2;
     MockAuthorize mockAuthorizer;
@@ -21,7 +21,7 @@ contract VaultTest is Test {
     function setUp() public {
         vm.startPrank(owner);
         mockAuthorizer = new MockAuthorize();
-        vault = new Vault();
+        vault = new LiteVault();
         vault.setAuthorizer(mockAuthorizer);
         vm.stopPrank();
 
@@ -83,7 +83,7 @@ contract VaultTest is Test {
         token1.approve(address(vault), type(uint256).max);
 
         vm.expectEmit(true, true, true, true);
-        emit Vault.Deposit(someone, address(token1), amount);
+        emit LiteVault.Deposit(someone, address(token1), amount);
         vm.prank(someone);
         vault.deposit(address(token1), amount);
     }
@@ -161,7 +161,7 @@ contract VaultTest is Test {
 
         // Withdraw tokens
         vm.expectEmit(true, true, true, true);
-        emit Vault.Withdrawal(someone, address(token1), withdrawAmount);
+        emit LiteVault.Withdrawal(someone, address(token1), withdrawAmount);
         vm.prank(someone);
         vault.withdraw(address(token1), withdrawAmount);
     }

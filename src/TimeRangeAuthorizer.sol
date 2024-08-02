@@ -5,31 +5,31 @@ import "./interfaces/IAuthorize.sol";
 
 contract TimeRangeAuthorizer is IAuthorize {
     address public owner;
-    uint256 public startDate;
-    uint256 public endDate;
+    uint256 public startTimestamp;
+    uint256 public endTimestamp;
 
-    event AuthorizationUpdated(uint256 newStartDate, uint256 newEndDate);
+    event TimeRangeUpdated(uint256 newStartTimestamp, uint256 newEndTimestamp);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Not the contract owner");
         _;
     }
 
-    constructor(uint256 _startDate, uint256 _endDate) {
-        require(_startDate < _endDate, "Start date must be before end date");
+    constructor(uint256 _startTimestamp, uint256 _endTimestamp) {
+        require(_startTimestamp < _endTimestamp, "Start timestamp must be before end timestamp");
         owner = msg.sender;
-        startDate = _startDate;
-        endDate = _endDate;
+        startTimestamp = _startTimestamp;
+        endTimestamp = _endTimestamp;
     }
 
     function authorize(address, address, uint256) external view override returns (bool) {
-        return block.timestamp < startDate || block.timestamp > endDate;
+        return block.timestamp < startTimestamp || block.timestamp > endTimestamp;
     }
 
-    function resetDates(uint256 newStartDate, uint256 newEndDate) external onlyOwner {
-        require(newStartDate < newEndDate, "New start date must be before new end date");
-        startDate = newStartDate;
-        endDate = newEndDate;
-        emit AuthorizationUpdated(newStartDate, newEndDate);
+    function setTimeRange(uint256 newStartTimestamp, uint256 newEndTimestamp) external onlyOwner {
+        require(newStartTimestamp < newEndTimestamp, "New start timestamp must be before new end timestamp");
+        startTimestamp = newStartTimestamp;
+        endTimestamp = newEndTimestamp;
+        emit TimeRangeUpdated(newStartTimestamp, newEndTimestamp);
     }
 }

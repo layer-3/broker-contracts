@@ -6,7 +6,8 @@ import "./interfaces/IVault.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract Vault is IVault, ReentrancyGuard {
+// LiteVault is a simple vault that allows users to deposit and withdraw tokens
+contract LiteVault is IVault, ReentrancyGuard {
     // Mapping from user to token to balances
     mapping(address => mapping(address => uint256)) private balances;
 
