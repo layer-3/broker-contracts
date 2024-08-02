@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
  * All the supply is minted to the deployer.
  */
 contract BrokerToken is ERC20Permit {
+    uint8 private immutable _decimals;
+
     /**
      * @dev Simple constructor, passing arguments to ERC20Permit and ERC20 constructors.
      * Mints the supply to the deployer.
@@ -15,7 +17,11 @@ contract BrokerToken is ERC20Permit {
      * @param symbol Symbol of the Token.
      * @param supply Maximum supply of the Token.
      */
-    constructor(string memory name, string memory symbol, uint256 supply) ERC20Permit(name) ERC20(name, symbol) {
+    constructor(string memory name, string memory symbol, uint8 decimals_, uint256 supply)
+        ERC20Permit(name)
+        ERC20(name, symbol)
+    {
+        _decimals = decimals_;
         _mint(msg.sender, supply);
     }
 
@@ -24,7 +30,7 @@ contract BrokerToken is ERC20Permit {
      * @dev Overrides ERC20 default value of 18;
      * @return uint8 Number of decimals of Token.
      */
-    function decimals() public pure override returns (uint8) {
-        return 8;
+    function decimals() public view override returns (uint8) {
+        return _decimals;
     }
 }

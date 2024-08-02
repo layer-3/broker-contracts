@@ -13,19 +13,19 @@ contract BrokerTokenTest is Test {
 
     function setUp() public {
         deployer = address(this); // Use the test contract address as the deployer
-        token = new BrokerToken("Canary", "CANARY", TOKEN_SUPPLY);
+        token = new BrokerToken("Canary", "CANARY", DECIMALS, TOKEN_SUPPLY);
     }
 
-    function testNameAndSymbol() public {
+    function testNameAndSymbol() public view {
         assertEq(token.name(), "Canary");
         assertEq(token.symbol(), "CANARY");
     }
 
-    function testDecimals() public {
+    function testDecimals() public view {
         assertEq(token.decimals(), DECIMALS);
     }
 
-    function testSupplyMintedToDeployer() public {
+    function testSupplyMintedToDeployer() public view {
         assertEq(token.balanceOf(deployer), TOKEN_SUPPLY);
     }
 }
