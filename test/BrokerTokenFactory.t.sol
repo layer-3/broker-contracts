@@ -26,7 +26,7 @@ contract BrokerTokenFactoryTest is Test {
 
         // Check if the token was created
         assertEq(factory.getBrokerTokensCount(), 1);
-        
+
         address tokenAddress = factory.getBrokerToken(0);
         BrokerToken token = BrokerToken(tokenAddress);
 
@@ -81,4 +81,3 @@ contract BrokerTokenFactoryTest is Test {
         assertEq(factory.getBrokerTokensCount(), 2);
     }
 }
-

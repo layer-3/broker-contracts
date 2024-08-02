@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.24;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import './BrokerToken.sol';
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./BrokerToken.sol";
 
 /**
  * @title BrokerTokenFactory
@@ -27,11 +27,7 @@ contract BrokerTokenFactory is Ownable {
      * @param symbol Symbol of the Token.
      * @param supply Maximum supply of the Token.
      */
-    function createBrokerToken(
-        string memory name,
-        string memory symbol,
-        uint256 supply
-    ) external onlyOwner {
+    function createBrokerToken(string memory name, string memory symbol, uint256 supply) external onlyOwner {
         BrokerToken token = new BrokerToken(name, symbol, supply);
         brokerTokens.push(address(token));
         emit BrokerTokenCreated(address(token));
@@ -55,4 +51,3 @@ contract BrokerTokenFactory is Ownable {
         return brokerTokens[index];
     }
 }
-
