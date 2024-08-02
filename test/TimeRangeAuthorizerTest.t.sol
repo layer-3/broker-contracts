@@ -38,8 +38,9 @@ contract TimeRangeAuthorizerTest is Test {
 
     function test_resetDates() public {
         vm.startPrank(owner);
-        uint256 newStartDate = block.timestamp + 3000;
-        uint256 newEndDate = block.timestamp + 4000;
+        uint256 newStartDate = vm.getBlockTimestamp() + 3000;
+        uint256 newEndDate = vm.getBlockTimestamp() + 4000;
+
         authorizer.resetDates(newStartDate, newEndDate);
         vm.stopPrank();
 
@@ -48,6 +49,7 @@ contract TimeRangeAuthorizerTest is Test {
 
         // Before newStartDate
         vm.warp(newStartDate - 1);
+        console.log("Block timestamp before newStartDate:", block.timestamp);
         assertEq(authorizer.authorize(user, token, amount), true);
 
         // At newStartDate
@@ -66,7 +68,6 @@ contract TimeRangeAuthorizerTest is Test {
         vm.warp(newEndDate + 1);
         assertEq(authorizer.authorize(user, token, amount), true);
     }
-
 
     function test_resetDatesNotOwner() public {
         vm.expectRevert("Not the contract owner");
