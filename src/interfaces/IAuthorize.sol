@@ -6,7 +6,6 @@ pragma solidity ^0.8.0;
  * @notice Interface for an authorization contract that validates if certain actions are allowed.
  */
 interface IAuthorize {
-
     /**
      * @dev Authorizes actions based on the owner, token, and amount.
      * @param owner The address of the token owner.

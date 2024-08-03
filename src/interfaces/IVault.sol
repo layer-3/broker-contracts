@@ -6,7 +6,6 @@ pragma solidity ^0.8.0;
  * @notice Interface for a vault contract that allows users to deposit, withdraw, and check balances of tokens and ETH.
  */
 interface IVault {
-
     /**
      * @dev Deposits a specified amount of tokens or ETH into the vault.
      * @param token The address of the token to deposit. Use address(0) for ETH.
