@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import "../src/TimeRangeAuthorizer.sol";
+import "../src/vault/TimeRangeAuthorizer.sol";
 
 contract TimeRangeAuthorizerTest is Test {
     TimeRangeAuthorizer authorizer;
