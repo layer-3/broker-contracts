@@ -1,6 +1,12 @@
 # Compiler files
 cache/
 out/
+build/
+
+# npm
+node_modules/
+package-lock.json
+package.json
 
 # Ignores development broadcast logs
 !/broadcast
