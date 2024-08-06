@@ -8,6 +8,7 @@ import "../interfaces/IAuthorize.sol";
  * @dev Authorizer contract that allows actions only within a specified time range.
  */
 contract TimeRangeAuthorizer is IAuthorize {
+    // TODO: (LANG) if owner is not changed after deployment, it is better to use `immutable` modifier.
     address public owner;
     uint256 public startTimestamp;
     uint256 public endTimestamp;
@@ -27,8 +28,13 @@ contract TimeRangeAuthorizer is IAuthorize {
      * @param _startTimestamp The start of the allowed time range.
      * @param _endTimestamp The end of the allowed time range.
      */
+    // TODO: (STYLE) it is better to use an underscore as a suffix (`startTimestamp_`) if a parameter name shadows a state variable.
     constructor(uint256 _startTimestamp, uint256 _endTimestamp) {
         require(_startTimestamp < _endTimestamp, "Start timestamp must be before end timestamp");
+
+        // TODO: (RESTR) if the vault is deployed with the factory, then the owner will be granted
+        // to the factory without any possibility to change it. Consider giving the owner role
+        // to the parameter passed to the constructor and/or adding a function to change the owner.
         owner = msg.sender;
         startTimestamp = _startTimestamp;
         endTimestamp = _endTimestamp;

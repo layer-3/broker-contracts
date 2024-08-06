@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+// TODO:
 import "../interfaces/IAuthorize.sol";
 import "../interfaces/IVault.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -10,13 +11,19 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * @title LiteVault
  * @notice A simple vault that allows users to deposit and withdraw tokens.
  */
+// TODO: (LANG/OPT) it is better to use custom errors instead of revert strings.
 contract LiteVault is IVault, ReentrancyGuard {
     // Mapping from user to token to balances
+    // TODO: (STYLE) it is better to use an underscore prefix for private state variables (`_balances`).
+    // Also, why don't we make it `internal`, so that it can be accessed by potential inheriting contracts?
     mapping(address => mapping(address => uint256)) private balances;
 
     IAuthorize public authorizer;
+    // TODO: (LANG) if owner is not changed after deployment, it is better to use `immutable` modifier.
     address public owner;
 
+    // TODO: (STYLE) it is better to declare events in the interface.
+    // TODO: (STYLE) it is better to use past participle form for event names (`Deposited` and `Withdrawn`).
     event Deposit(address indexed user, address indexed token, uint256 amount);
     event Withdrawal(address indexed user, address indexed token, uint256 amount);
 
@@ -32,6 +39,9 @@ contract LiteVault is IVault, ReentrancyGuard {
      * @dev Constructor sets the initial owner of the contract.
      */
     constructor() {
+        // TODO: (RESTR) if the vault is deployed with the factory, then the owner will be granted
+        // to the factory without any possibility to change it. Consider giving the owner role
+        // to the parameter passed to the constructor and/or adding a function to change the owner.
         owner = msg.sender;
     }
 
@@ -49,6 +59,7 @@ contract LiteVault is IVault, ReentrancyGuard {
      * @dev Sets the authorizer contract.
      * @param _authorizer The address of the authorizer contract.
      */
+    // TODO: (STYLE) it is better to use an underscore as a suffix (`authorizer_`) if a parameter name shadows a state variable.
     function setAuthorizer(IAuthorize _authorizer) external onlyOwner {
         authorizer = _authorizer;
     }
@@ -63,6 +74,9 @@ contract LiteVault is IVault, ReentrancyGuard {
             require(msg.value == amount, "Incorrect amount of ETH sent");
             balances[msg.sender][address(0)] += amount;
         } else {
+            // TODO: (RESTR) early ERC20 tokens (e.g., USDT) do not return a boolean value from `transferFrom`, which will cause
+            // the transaction to revert. Therefore, it is better to either do not check the return value or to extract it from the
+            // "non-standard" ERC20 tokens.
             require(IERC20(token).transferFrom(msg.sender, address(this), amount), "Transfer failed");
             balances[msg.sender][token] += amount;
         }
@@ -84,6 +98,7 @@ contract LiteVault is IVault, ReentrancyGuard {
         if (token == address(0)) {
             payable(msg.sender).transfer(amount);
         } else {
+            // TODO: (RESTR) the same for early ERC20 tokens.
             require(IERC20(token).transfer(msg.sender, amount), "Transfer failed");
         }
         emit Withdrawal(msg.sender, token, amount);

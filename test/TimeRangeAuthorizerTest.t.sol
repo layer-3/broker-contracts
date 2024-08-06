@@ -20,6 +20,8 @@ contract TimeRangeAuthorizerTest is Test {
         vm.stopPrank();
     }
 
+    // TODO: test for constructor is missing
+
     function test_initialAuthorization() public {
         assertEq(authorizer.authorize(user, token, amount), true);
 
