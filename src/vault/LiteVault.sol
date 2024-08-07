@@ -35,11 +35,8 @@ contract LiteVault is IVault, ReentrancyGuard {
     /**
      * @dev Constructor sets the initial owner of the contract.
      */
-    constructor() {
-        // TODO: (RESTR) if the vault is deployed with the factory, then the owner will be granted
-        // to the factory without any possibility to change it. Consider giving the owner role
-        // to the parameter passed to the constructor and/or adding a function to change the owner.
-        owner = msg.sender;
+    constructor(address owner_) {
+        owner = owner_;
     }
 
     /**

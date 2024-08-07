@@ -13,23 +13,28 @@ contract LiteVaultTest is Test {
     TestERC20 token2;
     MockAuthorize mockAuthorizer;
 
-    address owner = address(1);
-    address someone = address(2);
+    address deployer = address(1);
+    address owner = address(2);
+    address someone = address(3);
 
     uint256 ethBalance = 1 ether;
     uint256 token1Balance = 42e6;
 
     function setUp() public {
-        vm.startPrank(owner);
         mockAuthorizer = new MockAuthorize();
-        vault = new LiteVault();
+        vm.prank(deployer);
+        vault = new LiteVault(owner);
+        vm.prank(owner);
         vault.setAuthorizer(mockAuthorizer);
-        vm.stopPrank();
 
         token1 = new TestERC20("Test1", "TST1", 18, type(uint256).max);
         token2 = new TestERC20("Test2", "TST2", 18, type(uint256).max);
         token1.mint(address(vault), token1Balance);
         vm.deal(address(vault), ethBalance);
+    }
+
+    function test_constructor() public view {
+        assertEq(vault.owner(), owner);
     }
 
     function test_receive() public {
