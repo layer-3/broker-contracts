@@ -84,15 +84,14 @@ contract LiteVault is IVault, ReentrancyGuard {
      * @param token The address of the token to withdraw. Use address(0) for ETH.
      * @param amount The amount of tokens or ETH to withdraw.
      */
-    function withdraw(
-        address token,
-        uint256 amount
-    ) external override nonReentrant {
+    function withdraw(address token, uint256 amount) external override nonReentrant {
         uint256 currentBalance = _balances[msg.sender][token];
-        if (currentBalance < amount)
+        if (currentBalance < amount) {
             revert InsufficientBalance(token, amount, currentBalance);
-        if (!authorizer.authorize(msg.sender, token, amount))
+        }
+        if (!authorizer.authorize(msg.sender, token, amount)) {
             revert IAuthorize.Unauthorized(msg.sender, token, amount);
+        }
 
         _balances[msg.sender][token] -= amount;
 
@@ -111,10 +110,7 @@ contract LiteVault is IVault, ReentrancyGuard {
      * @param token The address of the token. Use address(0) for ETH.
      * @return The balance of the specified token for the user.
      */
-    function balanceOf(
-        address user,
-        address token
-    ) public view override returns (uint256) {
+    function balanceOf(address user, address token) public view override returns (uint256) {
         return _balances[user][token];
     }
 }

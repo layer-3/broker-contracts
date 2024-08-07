@@ -17,11 +17,7 @@ contract TimeRangeAuthorizerTest is Test {
 
     function setUp() public {
         vm.startPrank(deployer);
-        authorizer = new TimeRangeAuthorizer(
-            owner,
-            startTimestamp,
-            endTimestamp
-        );
+        authorizer = new TimeRangeAuthorizer(owner, startTimestamp, endTimestamp);
         vm.stopPrank();
     }
 
@@ -33,11 +29,7 @@ contract TimeRangeAuthorizerTest is Test {
 
     function test_constructorInvalidTimeRange() public {
         vm.expectRevert(
-            abi.encodeWithSelector(
-                TimeRangeAuthorizer.InvalidTimeRange.selector,
-                endTimestamp,
-                startTimestamp
-            )
+            abi.encodeWithSelector(TimeRangeAuthorizer.InvalidTimeRange.selector, endTimestamp, startTimestamp)
         );
         new TimeRangeAuthorizer(owner, endTimestamp, startTimestamp);
     }
@@ -91,9 +83,7 @@ contract TimeRangeAuthorizerTest is Test {
     }
 
     function test_setTimeRangeNotOwner() public {
-        vm.expectRevert(
-            abi.encodeWithSelector(TimeRangeAuthorizer.NotOwner.selector, user)
-        );
+        vm.expectRevert(abi.encodeWithSelector(TimeRangeAuthorizer.NotOwner.selector, user));
         vm.prank(user);
         authorizer.setTimeRange(block.timestamp + 3000, block.timestamp + 4000);
     }
@@ -104,11 +94,7 @@ contract TimeRangeAuthorizerTest is Test {
         uint256 newEndTimestamp = block.timestamp + 3000;
 
         vm.expectRevert(
-            abi.encodeWithSelector(
-                TimeRangeAuthorizer.InvalidTimeRange.selector,
-                newStartTimestamp,
-                newEndTimestamp
-            )
+            abi.encodeWithSelector(TimeRangeAuthorizer.InvalidTimeRange.selector, newStartTimestamp, newEndTimestamp)
         );
         authorizer.setTimeRange(newStartTimestamp, newEndTimestamp);
         vm.stopPrank();

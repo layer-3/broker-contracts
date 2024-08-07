@@ -13,13 +13,7 @@ contract BrokerTokenTest is Test {
     uint256 constant TOKEN_SUPPLY = 10_000_000_000;
 
     function setUp() public {
-        token = new BrokerToken(
-            "Canary",
-            "CANARY",
-            DECIMALS,
-            TOKEN_SUPPLY,
-            beneficiary
-        );
+        token = new BrokerToken("Canary", "CANARY", DECIMALS, TOKEN_SUPPLY, beneficiary);
     }
 
     function test_nameAndSymbol() public view {

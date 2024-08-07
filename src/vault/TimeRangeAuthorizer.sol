@@ -45,13 +45,10 @@ contract TimeRangeAuthorizer is IAuthorize {
      * @param startTimestamp_ The start of the forbidden time range.
      * @param endTimestamp_ The end of the forbidden time range.
      */
-    constructor(
-        address owner_,
-        uint256 startTimestamp_,
-        uint256 endTimestamp_
-    ) {
-        if (startTimestamp_ >= endTimestamp_)
+    constructor(address owner_, uint256 startTimestamp_, uint256 endTimestamp_) {
+        if (startTimestamp_ >= endTimestamp_) {
             revert InvalidTimeRange(startTimestamp_, endTimestamp_);
+        }
 
         owner = owner_;
         startTimestamp = startTimestamp_;
@@ -62,13 +59,8 @@ contract TimeRangeAuthorizer is IAuthorize {
      * @dev Authorizes actions only outside the specified time range.
      * @return True if the current time is outside the specified time range, false otherwise.
      */
-    function authorize(
-        address,
-        address,
-        uint256
-    ) external view override returns (bool) {
-        return
-            block.timestamp < startTimestamp || block.timestamp > endTimestamp;
+    function authorize(address, address, uint256) external view override returns (bool) {
+        return block.timestamp < startTimestamp || block.timestamp > endTimestamp;
     }
 
     /**
@@ -76,12 +68,10 @@ contract TimeRangeAuthorizer is IAuthorize {
      * @param newStartTimestamp The new start of the forbidden time range.
      * @param newEndTimestamp The new end of the forbidden time range.
      */
-    function setTimeRange(
-        uint256 newStartTimestamp,
-        uint256 newEndTimestamp
-    ) external onlyOwner {
-        if (newStartTimestamp >= newEndTimestamp)
+    function setTimeRange(uint256 newStartTimestamp, uint256 newEndTimestamp) external onlyOwner {
+        if (newStartTimestamp >= newEndTimestamp) {
             revert InvalidTimeRange(newStartTimestamp, newEndTimestamp);
+        }
 
         startTimestamp = newStartTimestamp;
         endTimestamp = newEndTimestamp;

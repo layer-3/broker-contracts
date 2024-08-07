@@ -18,13 +18,10 @@ contract BrokerToken is ERC20Permit {
      * @param decimals_ Number of decimals of the Token.
      * @param supply Maximum supply of the Token.
      */
-    constructor(
-        string memory name,
-        string memory symbol,
-        uint8 decimals_,
-        uint256 supply,
-        address beneficiary
-    ) ERC20Permit(name) ERC20(name, symbol) {
+    constructor(string memory name, string memory symbol, uint8 decimals_, uint256 supply, address beneficiary)
+        ERC20Permit(name)
+        ERC20(name, symbol)
+    {
         _decimals = decimals_;
         _mint(beneficiary, supply);
     }

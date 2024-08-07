@@ -12,22 +12,10 @@ contract DeployBrokerToken is Script {
     error EmptyBeneficiary();
 
     function run() public {
-        (
-            string memory name,
-            string memory symbol,
-            uint8 decimals,
-            uint256 supply,
-            address beneficiary
-        ) = getParams();
+        (string memory name, string memory symbol, uint8 decimals, uint256 supply, address beneficiary) = getParams();
 
         vm.startBroadcast(); // start broadcasting transactions to the blockchain
-        BrokerToken token = new BrokerToken(
-            name,
-            symbol,
-            decimals,
-            supply,
-            beneficiary
-        );
+        BrokerToken token = new BrokerToken(name, symbol, decimals, supply, beneficiary);
         vm.stopBroadcast();
 
         console.log("BrokerToken address: %s", address(token));
@@ -36,13 +24,7 @@ contract DeployBrokerToken is Script {
     function getParams()
         public
         view
-        returns (
-            string memory name,
-            string memory symbol,
-            uint8 decimals,
-            uint256 supply,
-            address beneficiary
-        )
+        returns (string memory name, string memory symbol, uint8 decimals, uint256 supply, address beneficiary)
     {
         name = vm.envString("BROKER_TOKEN_NAME");
         if (compareStrings(name, "")) {
@@ -73,11 +55,7 @@ contract DeployBrokerToken is Script {
         }
     }
 
-    function compareStrings(
-        string memory a,
-        string memory b
-    ) public pure returns (bool) {
-        return (keccak256(abi.encodePacked((a))) ==
-            keccak256(abi.encodePacked((b))));
+    function compareStrings(string memory a, string memory b) public pure returns (bool) {
+        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
     }
 }

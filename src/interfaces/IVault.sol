@@ -12,11 +12,7 @@ interface IVault {
      * @param token The address of the token deposited or address(0) for ETH.
      * @param amount The amount of tokens or ETH deposited.
      */
-    event Deposited(
-        address indexed user,
-        address indexed token,
-        uint256 amount
-    );
+    event Deposited(address indexed user, address indexed token, uint256 amount);
 
     /**
      * @notice Emitted when a user withdraws tokens or ETH from the vault.
@@ -24,11 +20,7 @@ interface IVault {
      * @param token The address of the token withdrawn or address(0) for ETH.
      * @param amount The amount of tokens or ETH withdrawn.
      */
-    event Withdrawn(
-        address indexed user,
-        address indexed token,
-        uint256 amount
-    );
+    event Withdrawn(address indexed user, address indexed token, uint256 amount);
 
     /**
      * @notice Error thrown when the value supplied with the function call is incorrect.
@@ -41,11 +33,7 @@ interface IVault {
      * @param required The amount of tokens that is required to perform the action.
      * @param available The amount of tokens that the user has.
      */
-    error InsufficientBalance(
-        address token,
-        uint256 required,
-        uint256 available
-    );
+    error InsufficientBalance(address token, uint256 required, uint256 available);
 
     /**
      * @dev Deposits a specified amount of tokens or ETH into the vault.
@@ -67,8 +55,5 @@ interface IVault {
      * @param token The address of the token. Use address(0) for ETH.
      * @return The balance of the specified token for the user.
      */
-    function balanceOf(
-        address user,
-        address token
-    ) external view returns (uint256);
+    function balanceOf(address user, address token) external view returns (uint256);
 }
