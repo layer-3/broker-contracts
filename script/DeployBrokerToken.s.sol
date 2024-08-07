@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
@@ -10,7 +11,12 @@ contract DeployBrokerToken is Script {
     error EmptySupply();
 
     function run() public {
-        (string memory name, string memory symbol, uint8 decimals, uint256 supply) = getParams();
+        (
+            string memory name,
+            string memory symbol,
+            uint8 decimals,
+            uint256 supply
+        ) = getParams();
 
         vm.startBroadcast(); // start broadcasting transactions to the blockchain
         BrokerToken token = new BrokerToken(name, symbol, decimals, supply);
@@ -19,7 +25,16 @@ contract DeployBrokerToken is Script {
         console.log("BrokerToken address: %s", address(token));
     }
 
-    function getParams() public returns (string memory name, string memory symbol, uint8 decimals, uint256 supply) {
+    function getParams()
+        public
+        view
+        returns (
+            string memory name,
+            string memory symbol,
+            uint8 decimals,
+            uint256 supply
+        )
+    {
         name = vm.envString("BROKER_TOKEN_NAME");
         if (compareStrings(name, "")) {
             revert EmptyName();
@@ -43,7 +58,11 @@ contract DeployBrokerToken is Script {
         }
     }
 
-    function compareStrings(string memory a, string memory b) public view returns (bool) {
-        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
+    function compareStrings(
+        string memory a,
+        string memory b
+    ) public pure returns (bool) {
+        return (keccak256(abi.encodePacked((a))) ==
+            keccak256(abi.encodePacked((b))));
     }
 }
