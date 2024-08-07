@@ -6,17 +6,22 @@ import "../src/vault/TimeRangeAuthorizer.sol";
 
 contract TimeRangeAuthorizerTest is Test {
     TimeRangeAuthorizer authorizer;
-    address owner = address(1);
-    address user = address(2);
-    address token = address(3);
+    address deployer = address(1);
+    address owner = address(2);
+    address user = address(3);
+    address token = address(4);
     uint256 amount = 100;
 
     uint256 startTimestamp = block.timestamp + 1000;
     uint256 endTimestamp = block.timestamp + 2000;
 
     function setUp() public {
-        vm.startPrank(owner);
-        authorizer = new TimeRangeAuthorizer(startTimestamp, endTimestamp);
+        vm.startPrank(deployer);
+        authorizer = new TimeRangeAuthorizer(
+            owner,
+            startTimestamp,
+            endTimestamp
+        );
         vm.stopPrank();
     }
 

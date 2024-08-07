@@ -27,16 +27,17 @@ contract TimeRangeAuthorizer is IAuthorize {
      * @param startTimestamp_ The start of the allowed time range.
      * @param endTimestamp_ The end of the allowed time range.
      */
-    constructor(uint256 startTimestamp_, uint256 endTimestamp_) {
+    constructor(
+        address owner_,
+        uint256 startTimestamp_,
+        uint256 endTimestamp_
+    ) {
         require(
             startTimestamp_ < endTimestamp_,
             "Start timestamp must be before end timestamp"
         );
 
-        // TODO: (RESTR) if the vault is deployed with the factory, then the owner will be granted
-        // to the factory without any possibility to change it. Consider giving the owner role
-        // to the parameter passed to the constructor and/or adding a function to change the owner.
-        owner = msg.sender;
+        owner = owner_;
         startTimestamp = startTimestamp_;
         endTimestamp = endTimestamp_;
     }
