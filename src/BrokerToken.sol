@@ -22,14 +22,11 @@ contract BrokerToken is ERC20Permit {
         string memory name,
         string memory symbol,
         uint8 decimals_,
-        uint256 supply
+        uint256 supply,
+        address beneficiary
     ) ERC20Permit(name) ERC20(name, symbol) {
         _decimals = decimals_;
-        // TODO: (RESTR) using `msg.sender` as a destination for minting tokens renders
-        // using factory for deployment impossible, as the factory contract
-        // will receive the token supply, and they will be locked there.
-        // We can have a separate constructor parameter for the beneficiary.
-        _mint(msg.sender, supply);
+        _mint(beneficiary, supply);
     }
 
     /**

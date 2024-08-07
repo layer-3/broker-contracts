@@ -9,17 +9,25 @@ contract DeployBrokerToken is Script {
     error EmptySymbol();
     error EmptyDecimals();
     error EmptySupply();
+    error EmptyBeneficiary();
 
     function run() public {
         (
             string memory name,
             string memory symbol,
             uint8 decimals,
-            uint256 supply
+            uint256 supply,
+            address beneficiary
         ) = getParams();
 
         vm.startBroadcast(); // start broadcasting transactions to the blockchain
-        BrokerToken token = new BrokerToken(name, symbol, decimals, supply);
+        BrokerToken token = new BrokerToken(
+            name,
+            symbol,
+            decimals,
+            supply,
+            beneficiary
+        );
         vm.stopBroadcast();
 
         console.log("BrokerToken address: %s", address(token));
@@ -32,7 +40,8 @@ contract DeployBrokerToken is Script {
             string memory name,
             string memory symbol,
             uint8 decimals,
-            uint256 supply
+            uint256 supply,
+            address beneficiary
         )
     {
         name = vm.envString("BROKER_TOKEN_NAME");
@@ -55,6 +64,12 @@ contract DeployBrokerToken is Script {
         supply = uint256(vm.parseUint(supplyStr));
         if (supply == 0) {
             revert EmptySupply();
+        }
+
+        string memory beneficiaryStr = vm.envString("BROKER_TOKEN_BENEFICIARY");
+        beneficiary = address(vm.parseAddress(beneficiaryStr));
+        if (beneficiary == address(0)) {
+            revert EmptyBeneficiary();
         }
     }
 
