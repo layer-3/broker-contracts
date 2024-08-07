@@ -68,7 +68,7 @@ contract LiteVaultTest is Test {
     }
 
     function test_revertIfEthNoMsgValue() public {
-        vm.expectRevert("Incorrect amount of ETH sent");
+        vm.expectRevert(abi.encodeWithSelector(IVault.IncorrectValue.selector));
         vm.prank(someone);
         vault.deposit(address(0), 42e5);
     }
@@ -76,7 +76,7 @@ contract LiteVaultTest is Test {
     function test_revertIfEthIncorrectMsgValue() public {
         uint256 amount = 42e5;
         vm.deal(someone, amount * 2);
-        vm.expectRevert("Incorrect amount of ETH sent");
+        vm.expectRevert(abi.encodeWithSelector(IVault.IncorrectValue.selector));
         vm.prank(someone);
         vault.deposit{value: amount + 42}(address(0), amount);
     }
@@ -134,6 +134,8 @@ contract LiteVaultTest is Test {
         );
     }
 
+    // TODO: add test for unauthorized withdrawal
+
     function test_ERC20FullFlow() public {
         uint256 depositAmount = token1Balance;
         uint256 withdrawAmount = 42e4;
@@ -158,7 +160,14 @@ contract LiteVaultTest is Test {
     }
 
     function test_revertIfInsufficientBalance() public {
-        vm.expectRevert("Insufficient balance");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IVault.InsufficientBalance.selector,
+                address(token1),
+                token1Balance,
+                0
+            )
+        );
         vm.prank(someone);
         vault.withdraw(address(token1), token1Balance);
     }

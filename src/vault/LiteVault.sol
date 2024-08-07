@@ -12,11 +12,16 @@ import "../interfaces/IVault.sol";
  * @title LiteVault
  * @notice A simple vault that allows users to deposit and withdraw tokens.
  */
-// TODO: (LANG/OPT) it is better to use custom errors instead of revert strings.
 contract LiteVault is IVault, ReentrancyGuard {
     /// @dev Using SafeERC20 to support non fully ERC20-compliant tokens,
     /// that may not return a boolean value on success.
     using SafeERC20 for IERC20;
+
+    /**
+     * @notice Error thrown when the caller is not the owner of the contract.
+     * @param account The caller of the function that is not the owner.
+     */
+    error NotOwner(address account);
 
     // Mapping from user to token to balances
     mapping(address => mapping(address => uint256)) internal _balances;
@@ -28,7 +33,7 @@ contract LiteVault is IVault, ReentrancyGuard {
      * @dev Modifier to check if the caller is the owner of the contract.
      */
     modifier onlyOwner() {
-        require(msg.sender == owner, "Not the contract owner");
+        if (msg.sender != owner) revert NotOwner(msg.sender);
         _;
     }
 
@@ -64,7 +69,7 @@ contract LiteVault is IVault, ReentrancyGuard {
      */
     function deposit(address token, uint256 amount) public payable override {
         if (token == address(0)) {
-            require(msg.value == amount, "Incorrect amount of ETH sent");
+            if (msg.value != amount) revert IncorrectValue();
             _balances[msg.sender][address(0)] += amount;
         } else {
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
@@ -84,11 +89,10 @@ contract LiteVault is IVault, ReentrancyGuard {
         uint256 amount
     ) external override nonReentrant {
         uint256 currentBalance = _balances[msg.sender][token];
-        require(currentBalance >= amount, "Insufficient balance");
-        require(
-            authorizer.authorize(msg.sender, token, amount),
-            "Authorization failed"
-        );
+        if (currentBalance < amount)
+            revert InsufficientBalance(token, amount, currentBalance);
+        if (!authorizer.authorize(msg.sender, token, amount))
+            revert IAuthorize.Unauthorized(msg.sender, token, amount);
 
         _balances[msg.sender][token] -= amount;
 
