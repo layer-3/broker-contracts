@@ -8,8 +8,7 @@ import "../interfaces/IAuthorize.sol";
  * @dev Authorizer contract that allows actions only within a specified time range.
  */
 contract TimeRangeAuthorizer is IAuthorize {
-    // TODO: (LANG) if owner is not changed after deployment, it is better to use `immutable` modifier.
-    address public owner;
+    address public immutable owner;
     uint256 public startTimestamp;
     uint256 public endTimestamp;
 
@@ -25,27 +24,34 @@ contract TimeRangeAuthorizer is IAuthorize {
 
     /**
      * @dev Constructor sets the initial owner and the time range.
-     * @param _startTimestamp The start of the allowed time range.
-     * @param _endTimestamp The end of the allowed time range.
+     * @param startTimestamp_ The start of the allowed time range.
+     * @param endTimestamp_ The end of the allowed time range.
      */
-    // TODO: (STYLE) it is better to use an underscore as a suffix (`startTimestamp_`) if a parameter name shadows a state variable.
-    constructor(uint256 _startTimestamp, uint256 _endTimestamp) {
-        require(_startTimestamp < _endTimestamp, "Start timestamp must be before end timestamp");
+    constructor(uint256 startTimestamp_, uint256 endTimestamp_) {
+        require(
+            startTimestamp_ < endTimestamp_,
+            "Start timestamp must be before end timestamp"
+        );
 
         // TODO: (RESTR) if the vault is deployed with the factory, then the owner will be granted
         // to the factory without any possibility to change it. Consider giving the owner role
         // to the parameter passed to the constructor and/or adding a function to change the owner.
         owner = msg.sender;
-        startTimestamp = _startTimestamp;
-        endTimestamp = _endTimestamp;
+        startTimestamp = startTimestamp_;
+        endTimestamp = endTimestamp_;
     }
 
     /**
      * @dev Authorizes actions only outside the specified time range.
      * @return True if the current time is outside the specified time range, false otherwise.
      */
-    function authorize(address, address, uint256) external view override returns (bool) {
-        return block.timestamp < startTimestamp || block.timestamp > endTimestamp;
+    function authorize(
+        address,
+        address,
+        uint256
+    ) external view override returns (bool) {
+        return
+            block.timestamp < startTimestamp || block.timestamp > endTimestamp;
     }
 
     /**
@@ -53,8 +59,14 @@ contract TimeRangeAuthorizer is IAuthorize {
      * @param newStartTimestamp The new start of the allowed time range.
      * @param newEndTimestamp The new end of the allowed time range.
      */
-    function setTimeRange(uint256 newStartTimestamp, uint256 newEndTimestamp) external onlyOwner {
-        require(newStartTimestamp < newEndTimestamp, "New start timestamp must be before new end timestamp");
+    function setTimeRange(
+        uint256 newStartTimestamp,
+        uint256 newEndTimestamp
+    ) external onlyOwner {
+        require(
+            newStartTimestamp < newEndTimestamp,
+            "New start timestamp must be before new end timestamp"
+        );
         startTimestamp = newStartTimestamp;
         endTimestamp = newEndTimestamp;
         emit TimeRangeUpdated(newStartTimestamp, newEndTimestamp);
