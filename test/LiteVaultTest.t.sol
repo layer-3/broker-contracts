@@ -76,8 +76,7 @@ contract LiteVaultTest is Test {
         vault.deposit{value: amount + 42}(address(0), amount);
     }
 
-    // TODO: (STYLE) having `test_emitsEventWithdrawn`, this test should be named `test_emitsEventDeposit`.
-    function test_emitsEvent() public {
+    function test_emitsEventDeposited() public {
         uint256 amount = 42e5;
         token1.mint(someone, amount);
 
@@ -130,7 +129,6 @@ contract LiteVaultTest is Test {
         );
     }
 
-    // TODO: what is the purpose of this test? There is almost no difference between this test and `test_withdrawERC20`.
     function test_ERC20FullFlow() public {
         uint256 depositAmount = token1Balance;
         uint256 withdrawAmount = 42e4;
@@ -160,7 +158,7 @@ contract LiteVaultTest is Test {
         vault.withdraw(address(token1), token1Balance);
     }
 
-    function test_emitsEventWithdraw() public {
+    function test_emitsEventWithdrawn() public {
         uint256 depositAmount = 42e5;
         uint256 withdrawAmount = 42e4;
 

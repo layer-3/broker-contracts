@@ -16,17 +16,16 @@ contract BrokerTokenTest is Test {
         token = new BrokerToken("Canary", "CANARY", DECIMALS, TOKEN_SUPPLY);
     }
 
-    // TODO: (STYLE) test name should be separated by undescore (e.g., `test_nameAndSymbol`)
-    function testNameAndSymbol() public view {
+    function test_nameAndSymbol() public view {
         assertEq(token.name(), "Canary");
         assertEq(token.symbol(), "CANARY");
     }
 
-    function testDecimals() public view {
+    function test_decimals() public view {
         assertEq(token.decimals(), DECIMALS);
     }
 
-    function testSupplyMintedToDeployer() public view {
+    function test_supplyMintedToDeployer() public view {
         assertEq(token.balanceOf(deployer), TOKEN_SUPPLY);
     }
 }
