@@ -22,11 +22,6 @@ contract LiteVault is IVault, ReentrancyGuard {
     // TODO: (LANG) if owner is not changed after deployment, it is better to use `immutable` modifier.
     address public owner;
 
-    // TODO: (STYLE) it is better to declare events in the interface.
-    // TODO: (STYLE) it is better to use past participle form for event names (`Deposited` and `Withdrawn`).
-    event Deposit(address indexed user, address indexed token, uint256 amount);
-    event Withdrawal(address indexed user, address indexed token, uint256 amount);
-
     /**
      * @dev Modifier to check if the caller is the owner of the contract.
      */
@@ -74,13 +69,13 @@ contract LiteVault is IVault, ReentrancyGuard {
             require(msg.value == amount, "Incorrect amount of ETH sent");
             balances[msg.sender][address(0)] += amount;
         } else {
-            // TODO: (RESTR) early ERC20 tokens (e.g., USDT) do not return a boolean value from `transferFrom`, which will cause
-            // the transaction to revert. Therefore, it is better to either do not check the return value or to extract it from the
-            // "non-standard" ERC20 tokens.
-            require(IERC20(token).transferFrom(msg.sender, address(this), amount), "Transfer failed");
+            require(
+                IERC20(token).transferFrom(msg.sender, address(this), amount),
+                "Transfer failed"
+            );
             balances[msg.sender][token] += amount;
         }
-        emit Deposit(msg.sender, token, amount);
+        emit Deposited(msg.sender, token, amount);
     }
 
     /**
@@ -88,20 +83,28 @@ contract LiteVault is IVault, ReentrancyGuard {
      * @param token The address of the token to withdraw. Use address(0) for ETH.
      * @param amount The amount of tokens or ETH to withdraw.
      */
-    function withdraw(address token, uint256 amount) external override nonReentrant {
+    function withdraw(
+        address token,
+        uint256 amount
+    ) external override nonReentrant {
         uint256 currentBalance = balances[msg.sender][token];
         require(currentBalance >= amount, "Insufficient balance");
-        require(authorizer.authorize(msg.sender, token, amount), "Authorization failed");
+        require(
+            authorizer.authorize(msg.sender, token, amount),
+            "Authorization failed"
+        );
 
         balances[msg.sender][token] -= amount;
 
         if (token == address(0)) {
             payable(msg.sender).transfer(amount);
         } else {
-            // TODO: (RESTR) the same for early ERC20 tokens.
-            require(IERC20(token).transfer(msg.sender, amount), "Transfer failed");
+            require(
+                IERC20(token).transfer(msg.sender, amount),
+                "Transfer failed"
+            );
         }
-        emit Withdrawal(msg.sender, token, amount);
+        emit Withdrawn(msg.sender, token, amount);
     }
 
     /**
@@ -110,7 +113,10 @@ contract LiteVault is IVault, ReentrancyGuard {
      * @param token The address of the token. Use address(0) for ETH.
      * @return The balance of the specified token for the user.
      */
-    function balanceOf(address user, address token) public view override returns (uint256) {
+    function balanceOf(
+        address user,
+        address token
+    ) public view override returns (uint256) {
         return balances[user][token];
     }
 }

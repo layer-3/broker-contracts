@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 import "../src/vault/LiteVault.sol";
+import "../src/interfaces/IVault.sol";
 import "./MockAuthorize.sol";
 import "./TestERC20.sol";
 
@@ -84,7 +85,7 @@ contract LiteVaultTest is Test {
         token1.approve(address(vault), type(uint256).max);
 
         vm.expectEmit(true, true, true, true);
-        emit LiteVault.Deposit(someone, address(token1), amount);
+        emit IVault.Deposited(someone, address(token1), amount);
         vm.prank(someone);
         vault.deposit(address(token1), amount);
     }
@@ -104,7 +105,10 @@ contract LiteVaultTest is Test {
         vm.prank(someone);
         vault.withdraw(address(token1), withdrawAmount);
         assertEq(token1.balanceOf(someone), withdrawAmount);
-        assertEq(vault.balanceOf(someone, address(token1)), depositAmount - withdrawAmount);
+        assertEq(
+            vault.balanceOf(someone, address(token1)),
+            depositAmount - withdrawAmount
+        );
     }
 
     function test_withdrawETH() public {
@@ -120,7 +124,10 @@ contract LiteVaultTest is Test {
         vm.prank(someone);
         vault.withdraw(address(0), withdrawAmount);
         assertEq(someone.balance, withdrawAmount);
-        assertEq(address(vault).balance, ethBalance + depositAmount - withdrawAmount);
+        assertEq(
+            address(vault).balance,
+            ethBalance + depositAmount - withdrawAmount
+        );
     }
 
     // TODO: what is the purpose of this test? There is almost no difference between this test and `test_withdrawERC20`.
@@ -141,7 +148,10 @@ contract LiteVaultTest is Test {
         vm.prank(someone);
         vault.withdraw(address(token2), withdrawAmount);
         assertEq(token2.balanceOf(someone), withdrawAmount);
-        assertEq(token2.balanceOf(address(vault)), depositAmount - withdrawAmount);
+        assertEq(
+            token2.balanceOf(address(vault)),
+            depositAmount - withdrawAmount
+        );
     }
 
     function test_revertIfInsufficientBalance() public {
@@ -163,7 +173,7 @@ contract LiteVaultTest is Test {
 
         // Withdraw tokens
         vm.expectEmit(true, true, true, true);
-        emit LiteVault.Withdrawal(someone, address(token1), withdrawAmount);
+        emit IVault.Withdrawn(someone, address(token1), withdrawAmount);
         vm.prank(someone);
         vault.withdraw(address(token1), withdrawAmount);
     }
