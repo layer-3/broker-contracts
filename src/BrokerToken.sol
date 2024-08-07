@@ -15,14 +15,15 @@ contract BrokerToken is ERC20Permit {
      * Mints the supply to the deployer.
      * @param name Name of the Token.
      * @param symbol Symbol of the Token.
+     * @param decimals_ Number of decimals of the Token.
      * @param supply Maximum supply of the Token.
      */
-    // TODO: (STYLE) no need to add an underscore suffix to the `decimals` parameter, as
-    // it `decimals` does not shadow any contract state variable.
-    constructor(string memory name, string memory symbol, uint8 decimals_, uint256 supply)
-        ERC20Permit(name)
-        ERC20(name, symbol)
-    {
+    constructor(
+        string memory name,
+        string memory symbol,
+        uint8 decimals_,
+        uint256 supply
+    ) ERC20Permit(name) ERC20(name, symbol) {
         _decimals = decimals_;
         // TODO: (RESTR) using `msg.sender` as a destination for minting tokens renders
         // using factory for deployment impossible, as the factory contract
