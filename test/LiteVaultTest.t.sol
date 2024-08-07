@@ -4,14 +4,14 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 import "../src/vault/LiteVault.sol";
 import "../src/interfaces/IVault.sol";
-import "./MockAuthorize.sol";
+import "./MockedAuthorizer.sol";
 import "./TestERC20.sol";
 
 contract LiteVaultTest is Test {
     LiteVault vault;
     TestERC20 token1;
     TestERC20 token2;
-    MockAuthorize mockAuthorizer;
+    TrueAuthorize trueAuthorizer;
 
     address deployer = address(1);
     address owner = address(2);
@@ -21,11 +21,11 @@ contract LiteVaultTest is Test {
     uint256 token1Balance = 42e6;
 
     function setUp() public {
-        mockAuthorizer = new MockAuthorize();
+        trueAuthorizer = new TrueAuthorize();
         vm.prank(deployer);
         vault = new LiteVault(owner);
         vm.prank(owner);
-        vault.setAuthorizer(mockAuthorizer);
+        vault.setAuthorizer(trueAuthorizer);
 
         token1 = new TestERC20("Test1", "TST1", 18, type(uint256).max);
         token2 = new TestERC20("Test2", "TST2", 18, type(uint256).max);
@@ -94,6 +94,25 @@ contract LiteVaultTest is Test {
         vault.deposit(address(token1), amount);
     }
 
+    function test_withdrawETH() public {
+        uint256 depositAmount = 42e5;
+        uint256 withdrawAmount = 42e4;
+
+        // Deposit ETH first
+        vm.deal(someone, depositAmount);
+        vm.prank(someone);
+        vault.deposit{value: depositAmount}(address(0), depositAmount);
+
+        // Withdraw ETH
+        vm.prank(someone);
+        vault.withdraw(address(0), withdrawAmount);
+        assertEq(someone.balance, withdrawAmount);
+        assertEq(
+            address(vault).balance,
+            ethBalance + depositAmount - withdrawAmount
+        );
+    }
+
     function test_withdrawERC20() public {
         uint256 depositAmount = 42e5;
         uint256 withdrawAmount = 42e4;
@@ -115,26 +134,60 @@ contract LiteVaultTest is Test {
         );
     }
 
-    function test_withdrawETH() public {
+    function test_revertIfUnauthorizedETH() public {
+        FalseAuthorize falseAuth = new FalseAuthorize();
+        vm.prank(owner);
+        vault.setAuthorizer(falseAuth);
+
         uint256 depositAmount = 42e5;
         uint256 withdrawAmount = 42e4;
 
-        // Deposit ETH first
+        // Deposit tokens first
         vm.deal(someone, depositAmount);
-        vm.prank(someone);
+        vm.startPrank(someone);
         vault.deposit{value: depositAmount}(address(0), depositAmount);
+        vm.stopPrank();
 
-        // Withdraw ETH
+        // Withdraw tokens
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAuthorize.Unauthorized.selector,
+                someone,
+                address(0),
+                withdrawAmount
+            )
+        );
         vm.prank(someone);
         vault.withdraw(address(0), withdrawAmount);
-        assertEq(someone.balance, withdrawAmount);
-        assertEq(
-            address(vault).balance,
-            ethBalance + depositAmount - withdrawAmount
-        );
     }
 
-    // TODO: add test for unauthorized withdrawal
+    function test_revertIfUnauthorizedERC20() public {
+        FalseAuthorize falseAuth = new FalseAuthorize();
+        vm.prank(owner);
+        vault.setAuthorizer(falseAuth);
+
+        uint256 depositAmount = 42e5;
+        uint256 withdrawAmount = 42e4;
+
+        // Deposit tokens first
+        token1.mint(someone, depositAmount);
+        vm.startPrank(someone);
+        token1.approve(address(vault), type(uint256).max);
+        vault.deposit(address(token1), depositAmount);
+        vm.stopPrank();
+
+        // Withdraw tokens
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAuthorize.Unauthorized.selector,
+                someone,
+                address(token1),
+                withdrawAmount
+            )
+        );
+        vm.prank(someone);
+        vault.withdraw(address(token1), withdrawAmount);
+    }
 
     function test_ERC20FullFlow() public {
         uint256 depositAmount = token1Balance;
