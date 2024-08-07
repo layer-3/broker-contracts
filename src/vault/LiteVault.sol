@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// TODO:
-import "../interfaces/IAuthorize.sol";
-import "../interfaces/IVault.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
+import "../interfaces/IAuthorize.sol";
+import "../interfaces/IVault.sol";
 
 /**
  * @title LiteVault
@@ -14,13 +14,10 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 // TODO: (LANG/OPT) it is better to use custom errors instead of revert strings.
 contract LiteVault is IVault, ReentrancyGuard {
     // Mapping from user to token to balances
-    // TODO: (STYLE) it is better to use an underscore prefix for private state variables (`_balances`).
-    // Also, why don't we make it `internal`, so that it can be accessed by potential inheriting contracts?
-    mapping(address => mapping(address => uint256)) private balances;
+    mapping(address => mapping(address => uint256)) internal _balances;
 
     IAuthorize public authorizer;
-    // TODO: (LANG) if owner is not changed after deployment, it is better to use `immutable` modifier.
-    address public owner;
+    address public immutable owner;
 
     /**
      * @dev Modifier to check if the caller is the owner of the contract.
@@ -52,11 +49,10 @@ contract LiteVault is IVault, ReentrancyGuard {
 
     /**
      * @dev Sets the authorizer contract.
-     * @param _authorizer The address of the authorizer contract.
+     * @param newAuthorizer The address of the authorizer contract.
      */
-    // TODO: (STYLE) it is better to use an underscore as a suffix (`authorizer_`) if a parameter name shadows a state variable.
-    function setAuthorizer(IAuthorize _authorizer) external onlyOwner {
-        authorizer = _authorizer;
+    function setAuthorizer(IAuthorize newAuthorizer) external onlyOwner {
+        authorizer = newAuthorizer;
     }
 
     /**
@@ -67,13 +63,13 @@ contract LiteVault is IVault, ReentrancyGuard {
     function deposit(address token, uint256 amount) public payable override {
         if (token == address(0)) {
             require(msg.value == amount, "Incorrect amount of ETH sent");
-            balances[msg.sender][address(0)] += amount;
+            _balances[msg.sender][address(0)] += amount;
         } else {
             require(
                 IERC20(token).transferFrom(msg.sender, address(this), amount),
                 "Transfer failed"
             );
-            balances[msg.sender][token] += amount;
+            _balances[msg.sender][token] += amount;
         }
         emit Deposited(msg.sender, token, amount);
     }
@@ -87,14 +83,14 @@ contract LiteVault is IVault, ReentrancyGuard {
         address token,
         uint256 amount
     ) external override nonReentrant {
-        uint256 currentBalance = balances[msg.sender][token];
+        uint256 currentBalance = _balances[msg.sender][token];
         require(currentBalance >= amount, "Insufficient balance");
         require(
             authorizer.authorize(msg.sender, token, amount),
             "Authorization failed"
         );
 
-        balances[msg.sender][token] -= amount;
+        _balances[msg.sender][token] -= amount;
 
         if (token == address(0)) {
             payable(msg.sender).transfer(amount);
@@ -117,6 +113,6 @@ contract LiteVault is IVault, ReentrancyGuard {
         address user,
         address token
     ) public view override returns (uint256) {
-        return balances[user][token];
+        return _balances[user][token];
     }
 }
