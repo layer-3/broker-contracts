@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "../interfaces/IAuthorize.sol";
@@ -13,6 +14,10 @@ import "../interfaces/IVault.sol";
  */
 // TODO: (LANG/OPT) it is better to use custom errors instead of revert strings.
 contract LiteVault is IVault, ReentrancyGuard {
+    /// @dev Using SafeERC20 to support non fully ERC20-compliant tokens,
+    /// that may not return a boolean value on success.
+    using SafeERC20 for IERC20;
+
     // Mapping from user to token to balances
     mapping(address => mapping(address => uint256)) internal _balances;
 
@@ -65,12 +70,10 @@ contract LiteVault is IVault, ReentrancyGuard {
             require(msg.value == amount, "Incorrect amount of ETH sent");
             _balances[msg.sender][address(0)] += amount;
         } else {
-            require(
-                IERC20(token).transferFrom(msg.sender, address(this), amount),
-                "Transfer failed"
-            );
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
             _balances[msg.sender][token] += amount;
         }
+
         emit Deposited(msg.sender, token, amount);
     }
 
@@ -95,11 +98,9 @@ contract LiteVault is IVault, ReentrancyGuard {
         if (token == address(0)) {
             payable(msg.sender).transfer(amount);
         } else {
-            require(
-                IERC20(token).transfer(msg.sender, amount),
-                "Transfer failed"
-            );
+            IERC20(token).safeTransfer(msg.sender, amount);
         }
+
         emit Withdrawn(msg.sender, token, amount);
     }
 
