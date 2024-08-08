@@ -6,18 +6,32 @@ import "../src/vault/TimeRangeAuthorizer.sol";
 
 contract TimeRangeAuthorizerTest is Test {
     TimeRangeAuthorizer authorizer;
-    address owner = address(1);
-    address user = address(2);
-    address token = address(3);
+    address deployer = address(1);
+    address owner = address(2);
+    address user = address(3);
+    address token = address(4);
     uint256 amount = 100;
 
     uint256 startTimestamp = block.timestamp + 1000;
     uint256 endTimestamp = block.timestamp + 2000;
 
     function setUp() public {
-        vm.startPrank(owner);
-        authorizer = new TimeRangeAuthorizer(startTimestamp, endTimestamp);
+        vm.startPrank(deployer);
+        authorizer = new TimeRangeAuthorizer(owner, startTimestamp, endTimestamp);
         vm.stopPrank();
+    }
+
+    function test_constructor() public view {
+        assertEq(authorizer.owner(), owner);
+        assertEq(authorizer.startTimestamp(), startTimestamp);
+        assertEq(authorizer.endTimestamp(), endTimestamp);
+    }
+
+    function test_constructorInvalidTimeRange() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(TimeRangeAuthorizer.InvalidTimeRange.selector, endTimestamp, startTimestamp)
+        );
+        new TimeRangeAuthorizer(owner, endTimestamp, startTimestamp);
     }
 
     function test_initialAuthorization() public {
@@ -69,7 +83,7 @@ contract TimeRangeAuthorizerTest is Test {
     }
 
     function test_setTimeRangeNotOwner() public {
-        vm.expectRevert("Not the contract owner");
+        vm.expectRevert(abi.encodeWithSelector(TimeRangeAuthorizer.NotOwner.selector, user));
         vm.prank(user);
         authorizer.setTimeRange(block.timestamp + 3000, block.timestamp + 4000);
     }
@@ -79,7 +93,9 @@ contract TimeRangeAuthorizerTest is Test {
         uint256 newStartTimestamp = block.timestamp + 4000;
         uint256 newEndTimestamp = block.timestamp + 3000;
 
-        vm.expectRevert("New start timestamp must be before new end timestamp");
+        vm.expectRevert(
+            abi.encodeWithSelector(TimeRangeAuthorizer.InvalidTimeRange.selector, newStartTimestamp, newEndTimestamp)
+        );
         authorizer.setTimeRange(newStartTimestamp, newEndTimestamp);
         vm.stopPrank();
     }

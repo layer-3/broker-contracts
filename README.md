@@ -21,6 +21,12 @@ https://book.getfoundry.sh/
 $ forge build
 ```
 
+### Generate interfaces
+
+```shell
+$ make all
+```
+
 ### Test
 
 ```shell
