@@ -1,38 +1,47 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
 import "../interfaces/IAuthorize.sol";
 import "../interfaces/IVault.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title LiteVault
  * @notice A simple vault that allows users to deposit and withdraw tokens.
  */
 contract LiteVault is IVault, ReentrancyGuard {
+    /// @dev Using SafeERC20 to support non fully ERC20-compliant tokens,
+    /// that may not return a boolean value on success.
+    using SafeERC20 for IERC20;
+
+    /**
+     * @notice Error thrown when the caller is not the owner of the contract.
+     * @param account The caller of the function that is not the owner.
+     */
+    error NotOwner(address account);
+
     // Mapping from user to token to balances
-    mapping(address => mapping(address => uint256)) private balances;
+    mapping(address => mapping(address => uint256)) internal _balances;
 
     IAuthorize public authorizer;
-    address public owner;
-
-    event Deposit(address indexed user, address indexed token, uint256 amount);
-    event Withdrawal(address indexed user, address indexed token, uint256 amount);
+    address public immutable owner;
 
     /**
      * @dev Modifier to check if the caller is the owner of the contract.
      */
     modifier onlyOwner() {
-        require(msg.sender == owner, "Not the contract owner");
+        if (msg.sender != owner) revert NotOwner(msg.sender);
         _;
     }
 
     /**
      * @dev Constructor sets the initial owner of the contract.
      */
-    constructor() {
-        owner = msg.sender;
+    constructor(address owner_) {
+        owner = owner_;
     }
 
     /**
@@ -47,10 +56,10 @@ contract LiteVault is IVault, ReentrancyGuard {
 
     /**
      * @dev Sets the authorizer contract.
-     * @param _authorizer The address of the authorizer contract.
+     * @param newAuthorizer The address of the authorizer contract.
      */
-    function setAuthorizer(IAuthorize _authorizer) external onlyOwner {
-        authorizer = _authorizer;
+    function setAuthorizer(IAuthorize newAuthorizer) external onlyOwner {
+        authorizer = newAuthorizer;
     }
 
     /**
@@ -60,13 +69,15 @@ contract LiteVault is IVault, ReentrancyGuard {
      */
     function deposit(address token, uint256 amount) public payable override {
         if (token == address(0)) {
-            require(msg.value == amount, "Incorrect amount of ETH sent");
-            balances[msg.sender][address(0)] += amount;
+            if (msg.value != amount) revert IncorrectValue();
+            _balances[msg.sender][address(0)] += amount;
         } else {
-            require(IERC20(token).transferFrom(msg.sender, address(this), amount), "Transfer failed");
-            balances[msg.sender][token] += amount;
+            if (msg.value != 0) revert IncorrectValue();
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+            _balances[msg.sender][token] += amount;
         }
-        emit Deposit(msg.sender, token, amount);
+
+        emit Deposited(msg.sender, token, amount);
     }
 
     /**
@@ -75,18 +86,23 @@ contract LiteVault is IVault, ReentrancyGuard {
      * @param amount The amount of tokens or ETH to withdraw.
      */
     function withdraw(address token, uint256 amount) external override nonReentrant {
-        uint256 currentBalance = balances[msg.sender][token];
-        require(currentBalance >= amount, "Insufficient balance");
-        require(authorizer.authorize(msg.sender, token, amount), "Authorization failed");
+        uint256 currentBalance = _balances[msg.sender][token];
+        if (currentBalance < amount) {
+            revert InsufficientBalance(token, amount, currentBalance);
+        }
+        if (!authorizer.authorize(msg.sender, token, amount)) {
+            revert IAuthorize.Unauthorized(msg.sender, token, amount);
+        }
 
-        balances[msg.sender][token] -= amount;
+        _balances[msg.sender][token] -= amount;
 
         if (token == address(0)) {
             payable(msg.sender).transfer(amount);
         } else {
-            require(IERC20(token).transfer(msg.sender, amount), "Transfer failed");
+            IERC20(token).safeTransfer(msg.sender, amount);
         }
-        emit Withdrawal(msg.sender, token, amount);
+
+        emit Withdrawn(msg.sender, token, amount);
     }
 
     /**
@@ -96,6 +112,6 @@ contract LiteVault is IVault, ReentrancyGuard {
      * @return The balance of the specified token for the user.
      */
     function balanceOf(address user, address token) public view override returns (uint256) {
-        return balances[user][token];
+        return _balances[user][token];
     }
 }
