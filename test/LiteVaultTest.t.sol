@@ -45,7 +45,7 @@ contract LiteVaultTest is Test {
         assertEq(address(vault).balance, ethBalance + amount);
     }
 
-    function test_successEth() public {
+    function test_depositSuccessEth() public {
         uint256 amount = 42e5;
         vm.deal(someone, amount);
 
@@ -55,7 +55,7 @@ contract LiteVaultTest is Test {
         assertEq(someone.balance, 0);
     }
 
-    function test_successERC20() public {
+    function test_depositSuccessERC20() public {
         uint256 amount = 42e5;
         token1.mint(someone, amount);
 
@@ -67,18 +67,30 @@ contract LiteVaultTest is Test {
         assertEq(token1.balanceOf(someone), 0);
     }
 
-    function test_revertIfEthNoMsgValue() public {
+    function test_depositRevertIfEthNoMsgValue() public {
         vm.expectRevert(abi.encodeWithSelector(IVault.IncorrectValue.selector));
         vm.prank(someone);
         vault.deposit(address(0), 42e5);
     }
 
-    function test_revertIfEthIncorrectMsgValue() public {
+    function test_depositRevertIfEthIncorrectMsgValue() public {
         uint256 amount = 42e5;
         vm.deal(someone, amount * 2);
         vm.expectRevert(abi.encodeWithSelector(IVault.IncorrectValue.selector));
         vm.prank(someone);
         vault.deposit{value: amount + 42}(address(0), amount);
+    }
+
+    function test_depositRevertIfERC20AndValue() public {
+        uint256 amount = 42e5;
+        token1.mint(someone, amount);
+        vm.deal(someone, amount);
+
+        vm.prank(someone);
+        token1.approve(address(vault), type(uint256).max);
+        vm.expectRevert(abi.encodeWithSelector(IVault.IncorrectValue.selector));
+        vm.prank(someone);
+        vault.deposit{value: 42}(address(token1), amount);
     }
 
     function test_emitsEventDeposited() public {
@@ -128,7 +140,7 @@ contract LiteVaultTest is Test {
         assertEq(vault.balanceOf(someone, address(token1)), depositAmount - withdrawAmount);
     }
 
-    function test_revertIfUnauthorizedETH() public {
+    function test_withdrawRevertIfUnauthorizedETH() public {
         FalseAuthorize falseAuth = new FalseAuthorize();
         vm.prank(owner);
         vault.setAuthorizer(falseAuth);
@@ -148,7 +160,7 @@ contract LiteVaultTest is Test {
         vault.withdraw(address(0), withdrawAmount);
     }
 
-    function test_revertIfUnauthorizedERC20() public {
+    function test_withdrawRevertIfUnauthorizedERC20() public {
         FalseAuthorize falseAuth = new FalseAuthorize();
         vm.prank(owner);
         vault.setAuthorizer(falseAuth);

@@ -72,6 +72,7 @@ contract LiteVault is IVault, ReentrancyGuard {
             if (msg.value != amount) revert IncorrectValue();
             _balances[msg.sender][address(0)] += amount;
         } else {
+            if (msg.value != 0) revert IncorrectValue();
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
             _balances[msg.sender][token] += amount;
         }
