@@ -55,6 +55,30 @@ contract LiteVault is IVault, ReentrancyGuard {
     fallback() external payable {}
 
     /**
+     * @dev Returns the balance of the specified token for a user.
+     * @param user The address of the user.
+     * @param token The address of the token. Use address(0) for ETH.
+     * @return The balance of the specified token for the user.
+     */
+    function balanceOf(address user, address token) public view override returns (uint256) {
+        return _balances[user][token];
+    }
+
+    /**
+     * @dev Returns the balances of multiple tokens for a user.
+     * @param user The address of the user.
+     * @param tokens The addresses of the tokens. Use address(0) for ETH.
+     * @return The balances of the specified tokens for the user.
+     */
+    function balancesOfTokens(address user, address[] calldata tokens) external view returns (uint256[] memory) {
+        uint256[] memory balances = new uint256[](tokens.length);
+        for (uint256 i = 0; i < tokens.length; i++) {
+            balances[i] = _balances[user][tokens[i]];
+        }
+        return balances;
+    }
+
+    /**
      * @dev Sets the authorizer contract.
      * @param newAuthorizer The address of the authorizer contract.
      */
@@ -103,15 +127,5 @@ contract LiteVault is IVault, ReentrancyGuard {
         }
 
         emit Withdrawn(msg.sender, token, amount);
-    }
-
-    /**
-     * @dev Returns the balance of the specified token for a user.
-     * @param user The address of the user.
-     * @param token The address of the token. Use address(0) for ETH.
-     * @return The balance of the specified token for the user.
-     */
-    function balanceOf(address user, address token) public view override returns (uint256) {
-        return _balances[user][token];
     }
 }
