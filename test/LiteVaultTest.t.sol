@@ -45,6 +45,84 @@ contract LiteVaultTest is Test {
         assertEq(address(vault).balance, ethBalance + amount);
     }
 
+    function test_balanceOf() public {
+        // zero balances at start
+        assertEq(vault.balanceOf(address(vault), address(0)), 0);
+        assertEq(vault.balanceOf(address(vault), address(token1)), 0);
+        assertEq(vault.balanceOf(address(vault), address(token2)), 0);
+
+        // deposit ETH
+        uint256 ethAmount = 42e5;
+        vm.deal(someone, ethAmount);
+        vm.prank(someone);
+        vault.deposit{value: ethAmount}(address(0), ethAmount);
+        assertEq(vault.balanceOf(someone, address(0)), ethAmount);
+
+        // deposit token1
+        uint256 token1Amount = 32e5;
+        token1.mint(someone, token1Amount);
+        vm.startPrank(someone);
+        token1.approve(address(vault), type(uint256).max);
+        vault.deposit(address(token1), token1Amount);
+        vm.stopPrank();
+        assertEq(vault.balanceOf(someone, address(token1)), token1Amount);
+
+        // deposit token2
+        uint256 token2Amount = 22e5;
+        token2.mint(someone, token2Amount);
+        vm.startPrank(someone);
+        token2.approve(address(vault), type(uint256).max);
+        vault.deposit(address(token2), token2Amount);
+        vm.stopPrank();
+        assertEq(vault.balanceOf(someone, address(token2)), token2Amount);
+    }
+
+    function test_balancesOfTokens() public {
+        // zero balances at start
+        assertEq(vault.balancesOfTokens(address(vault), new address[](0)).length, 0);
+
+        // deposit ETH
+        uint256 ethAmount = 42e5;
+        vm.deal(someone, ethAmount);
+        vm.prank(someone);
+        vault.deposit{value: ethAmount}(address(0), ethAmount);
+        address[] memory tokens = new address[](3);
+        tokens[0] = address(0);
+        tokens[1] = address(token1);
+        tokens[2] = address(token2);
+        uint256[] memory balances = vault.balancesOfTokens(someone, tokens);
+        assertEq(balances.length, 3);
+        assertEq(balances[0], ethAmount);
+        assertEq(balances[1], 0);
+        assertEq(balances[2], 0);
+
+        // deposit token1
+        uint256 token1Amount = 52e5;
+        token1.mint(someone, token1Amount);
+        vm.startPrank(someone);
+        token1.approve(address(vault), type(uint256).max);
+        vault.deposit(address(token1), token1Amount);
+        vm.stopPrank();
+        balances = vault.balancesOfTokens(someone, tokens);
+        assertEq(balances.length, 3);
+        assertEq(balances[0], ethAmount);
+        assertEq(balances[1], token1Amount);
+        assertEq(balances[2], 0);
+
+        // deposit token2
+        uint256 token2Amount = 62e5;
+        token2.mint(someone, token2Amount);
+        vm.startPrank(someone);
+        token2.approve(address(vault), type(uint256).max);
+        vault.deposit(address(token2), token2Amount);
+        vm.stopPrank();
+        balances = vault.balancesOfTokens(someone, tokens);
+        assertEq(balances.length, 3);
+        assertEq(balances[0], ethAmount);
+        assertEq(balances[1], token1Amount);
+        assertEq(balances[2], token2Amount);
+    }
+
     function test_depositSuccessEth() public {
         uint256 amount = 42e5;
         vm.deal(someone, amount);
