@@ -2,7 +2,7 @@ SOLC = solc
 ABIGEN = abigen
 CONTRACT_PATH = ./src/vault/LiteVault.sol
 BUILD_DIR = ./build
-INTERFACE_DIR = ./vault
+INTERFACE_DIR = ./interface
 BASE_PATH = .
 INCLUDE_PATH = ./node_modules
 
