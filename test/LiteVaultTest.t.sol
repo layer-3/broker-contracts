@@ -37,14 +37,6 @@ contract LiteVaultTest is Test {
         assertEq(vault.owner(), owner);
     }
 
-    function test_receive() public {
-        uint256 amount = 42e5;
-        vm.deal(someone, amount);
-        vm.prank(someone);
-        payable(address(vault)).transfer(amount);
-        assertEq(address(vault).balance, ethBalance + amount);
-    }
-
     function test_balanceOf() public {
         // zero balances at start
         assertEq(vault.balanceOf(address(vault), address(0)), 0);

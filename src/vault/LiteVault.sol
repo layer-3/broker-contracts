@@ -45,16 +45,6 @@ contract LiteVault is IVault, ReentrancyGuard {
     }
 
     /**
-     * @dev Function to receive Ether. msg.data must be empty.
-     */
-    receive() external payable {}
-
-    /**
-     * @dev Fallback function is called when msg.data is not empty.
-     */
-    fallback() external payable {}
-
-    /**
      * @dev Returns the balance of the specified token for a user.
      * @param user The address of the user.
      * @param token The address of the token. Use address(0) for ETH.
