@@ -20,6 +20,36 @@ forge build
 
 ### Mainnet
 
+#### Ethereum
+
+Chain id: `1`.
+
+Last updated: September 6, 2024.
+
+| Description           | Contract Name       | Transaction Hash                                                                                            | Address                                                                                                                  | Git SHA                                  | Notes                                                     |
+| --------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- | --------------------------------------------------------- |
+| Time range authorizer | TimeRangeAuthorizer | [0xd512...23e2](https://etherscan.io/tx/0xd512b239694e4ddb8255cbc0fac47eb4733dcbeaf270d9d63b788b6850f823e2) | `0x547d613C2f613c9bC78d49051093F092924aaD1c`[↗](https://etherscan.io/address/0x547d613C2f613c9bC78d49051093F092924aaD1c) | fff15f51b0e6c3963aeeb01b0f3ce661721c8c9b | Time range is set to Sep 6th - November 10th 23:59:59 UTC |
+
+#### Polygon
+
+Chain id: `137`.
+
+Last updated: September 6, 2024.
+
+| Description           | Contract Name       | Transaction Hash                                                                                               | Address                                                                                                                     | Git SHA                                  | Notes                                                     |
+| --------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------- |
+| Time range authorizer | TimeRangeAuthorizer | [0xf05c...d6b6](https://polygonscan.com/tx/0xf05c56617b939c8876d01619947136921d8793595d41c26bf52fb0b21d1cd6b6) | `0x547d613C2f613c9bC78d49051093F092924aaD1c`[↗](https://polygonscan.com/address/0x547d613C2f613c9bC78d49051093F092924aaD1c) | fff15f51b0e6c3963aeeb01b0f3ce661721c8c9b | Time range is set to Sep 6th - November 10th 23:59:59 UTC |
+
+#### Linea
+
+Chain id: `59144`.
+
+Last updated: September 6, 2024.
+
+| Description           | Contract Name       | Transaction Hash                                                                                               | Address                                                                                                                     | Git SHA                                  | Notes                                                     |
+| --------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------- |
+| Time range authorizer | TimeRangeAuthorizer | [0x57d0...90d9](https://lineascan.build/tx/0x57d0f6faf6c97b33b5095f1d83a9f051484c15a42ea5567398593461872890d9) | `0x547d613C2f613c9bC78d49051093F092924aaD1c`[↗](https://lineascan.build/address/0x547d613C2f613c9bC78d49051093F092924aaD1c) | fff15f51b0e6c3963aeeb01b0f3ce661721c8c9b | Time range is set to Sep 6th - November 10th 23:59:59 UTC |
+
 ### Testnet
 
 #### Sepolia
