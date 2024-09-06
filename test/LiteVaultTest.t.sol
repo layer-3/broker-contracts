@@ -71,7 +71,10 @@ contract LiteVaultTest is Test {
 
     function test_balancesOfTokens() public {
         // zero balances at start
-        assertEq(vault.balancesOfTokens(address(vault), new address[](0)).length, 0);
+        assertEq(
+            vault.balancesOfTokens(address(vault), new address[](0)).length,
+            0
+        );
 
         // deposit ETH
         uint256 ethAmount = 42e5;
@@ -113,6 +116,25 @@ contract LiteVaultTest is Test {
         assertEq(balances[0], ethAmount);
         assertEq(balances[1], token1Amount);
         assertEq(balances[2], token2Amount);
+    }
+
+    function test_successSetAuthorizerIfOwner() public {
+        TrueAuthorize newAuthorizer = new TrueAuthorize();
+        vm.prank(owner);
+        vault.setAuthorizer(newAuthorizer);
+        assertEq(address(vault.authorizer()), address(newAuthorizer));
+    }
+
+    function test_revertSetAuthorizerIfNotOwner() public {
+        FalseAuthorize newAuthorizer = new FalseAuthorize();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Ownable.OwnableUnauthorizedAccount.selector,
+                someone
+            )
+        );
+        vm.prank(someone);
+        vault.setAuthorizer(newAuthorizer);
     }
 
     function test_depositSuccessEth() public {
@@ -189,7 +211,10 @@ contract LiteVaultTest is Test {
         vm.prank(someone);
         vault.withdraw(address(0), withdrawAmount);
         assertEq(someone.balance, withdrawAmount);
-        assertEq(address(vault).balance, ethBalance + depositAmount - withdrawAmount);
+        assertEq(
+            address(vault).balance,
+            ethBalance + depositAmount - withdrawAmount
+        );
     }
 
     function test_withdrawERC20() public {
@@ -207,7 +232,10 @@ contract LiteVaultTest is Test {
         vm.prank(someone);
         vault.withdraw(address(token1), withdrawAmount);
         assertEq(token1.balanceOf(someone), withdrawAmount);
-        assertEq(vault.balanceOf(someone, address(token1)), depositAmount - withdrawAmount);
+        assertEq(
+            vault.balanceOf(someone, address(token1)),
+            depositAmount - withdrawAmount
+        );
     }
 
     function test_withdrawRevertIfUnauthorizedETH() public {
@@ -225,7 +253,14 @@ contract LiteVaultTest is Test {
         vm.stopPrank();
 
         // Withdraw tokens
-        vm.expectRevert(abi.encodeWithSelector(IAuthorize.Unauthorized.selector, someone, address(0), withdrawAmount));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAuthorize.Unauthorized.selector,
+                someone,
+                address(0),
+                withdrawAmount
+            )
+        );
         vm.prank(someone);
         vault.withdraw(address(0), withdrawAmount);
     }
@@ -247,7 +282,12 @@ contract LiteVaultTest is Test {
 
         // Withdraw tokens
         vm.expectRevert(
-            abi.encodeWithSelector(IAuthorize.Unauthorized.selector, someone, address(token1), withdrawAmount)
+            abi.encodeWithSelector(
+                IAuthorize.Unauthorized.selector,
+                someone,
+                address(token1),
+                withdrawAmount
+            )
         );
         vm.prank(someone);
         vault.withdraw(address(token1), withdrawAmount);
@@ -270,11 +310,21 @@ contract LiteVaultTest is Test {
         vm.prank(someone);
         vault.withdraw(address(token2), withdrawAmount);
         assertEq(token2.balanceOf(someone), withdrawAmount);
-        assertEq(token2.balanceOf(address(vault)), depositAmount - withdrawAmount);
+        assertEq(
+            token2.balanceOf(address(vault)),
+            depositAmount - withdrawAmount
+        );
     }
 
     function test_revertIfInsufficientBalance() public {
-        vm.expectRevert(abi.encodeWithSelector(IVault.InsufficientBalance.selector, address(token1), token1Balance, 0));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IVault.InsufficientBalance.selector,
+                address(token1),
+                token1Balance,
+                0
+            )
+        );
         vm.prank(someone);
         vault.withdraw(address(token1), token1Balance);
     }
