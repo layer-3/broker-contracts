@@ -7,9 +7,8 @@ import "../src/vault/TimeRangeAuthorizer.sol";
 contract TimeRangeAuthorizerTest is Test {
     TimeRangeAuthorizer authorizer;
     address deployer = address(1);
-    address owner = address(2);
-    address user = address(3);
-    address token = address(4);
+    address user = address(2);
+    address token = address(3);
     uint256 amount = 100;
 
     uint256 startTimestamp = block.timestamp + 1000;
@@ -17,12 +16,11 @@ contract TimeRangeAuthorizerTest is Test {
 
     function setUp() public {
         vm.startPrank(deployer);
-        authorizer = new TimeRangeAuthorizer(owner, startTimestamp, endTimestamp);
+        authorizer = new TimeRangeAuthorizer(startTimestamp, endTimestamp);
         vm.stopPrank();
     }
 
     function test_constructor() public view {
-        assertEq(authorizer.owner(), owner);
         assertEq(authorizer.startTimestamp(), startTimestamp);
         assertEq(authorizer.endTimestamp(), endTimestamp);
     }
@@ -31,7 +29,7 @@ contract TimeRangeAuthorizerTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(TimeRangeAuthorizer.InvalidTimeRange.selector, endTimestamp, startTimestamp)
         );
-        new TimeRangeAuthorizer(owner, endTimestamp, startTimestamp);
+        new TimeRangeAuthorizer(endTimestamp, startTimestamp);
     }
 
     function test_initialAuthorization() public {
@@ -48,55 +46,5 @@ contract TimeRangeAuthorizerTest is Test {
 
         vm.warp(endTimestamp + 1);
         assertEq(authorizer.authorize(user, token, amount), true);
-    }
-
-    function test_setTimeRange() public {
-        vm.startPrank(owner);
-        uint256 newStartTimestamp = vm.getBlockTimestamp() + 3000;
-        uint256 newEndTimestamp = vm.getBlockTimestamp() + 4000;
-
-        authorizer.setTimeRange(newStartTimestamp, newEndTimestamp);
-        vm.stopPrank();
-
-        assertEq(authorizer.startTimestamp(), newStartTimestamp);
-        assertEq(authorizer.endTimestamp(), newEndTimestamp);
-
-        // Before newStartTimestamp
-        vm.warp(newStartTimestamp - 1);
-        assertEq(authorizer.authorize(user, token, amount), true);
-
-        // At newStartTimestamp
-        vm.warp(newStartTimestamp);
-        assertEq(authorizer.authorize(user, token, amount), false);
-
-        // During the new time range
-        vm.warp(newStartTimestamp + 1);
-        assertEq(authorizer.authorize(user, token, amount), false);
-
-        // At newEndTimestamp
-        vm.warp(newEndTimestamp);
-        assertEq(authorizer.authorize(user, token, amount), false);
-
-        // After newEndTimestamp
-        vm.warp(newEndTimestamp + 1);
-        assertEq(authorizer.authorize(user, token, amount), true);
-    }
-
-    function test_setTimeRangeNotOwner() public {
-        vm.expectRevert(abi.encodeWithSelector(TimeRangeAuthorizer.NotOwner.selector, user));
-        vm.prank(user);
-        authorizer.setTimeRange(block.timestamp + 3000, block.timestamp + 4000);
-    }
-
-    function test_setTimeRangeInvalid() public {
-        vm.startPrank(owner);
-        uint256 newStartTimestamp = block.timestamp + 4000;
-        uint256 newEndTimestamp = block.timestamp + 3000;
-
-        vm.expectRevert(
-            abi.encodeWithSelector(TimeRangeAuthorizer.InvalidTimeRange.selector, newStartTimestamp, newEndTimestamp)
-        );
-        authorizer.setTimeRange(newStartTimestamp, newEndTimestamp);
-        vm.stopPrank();
     }
 }

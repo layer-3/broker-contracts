@@ -115,6 +115,20 @@ contract LiteVaultTest is Test {
         assertEq(balances[2], token2Amount);
     }
 
+    function test_successSetAuthorizerIfOwner() public {
+        TrueAuthorize newAuthorizer = new TrueAuthorize();
+        vm.prank(owner);
+        vault.setAuthorizer(newAuthorizer);
+        assertEq(address(vault.authorizer()), address(newAuthorizer));
+    }
+
+    function test_revertSetAuthorizerIfNotOwner() public {
+        FalseAuthorize newAuthorizer = new FalseAuthorize();
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, someone));
+        vm.prank(someone);
+        vault.setAuthorizer(newAuthorizer);
+    }
+
     function test_depositSuccessEth() public {
         uint256 amount = 42e5;
         vm.deal(someone, amount);

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "../interfaces/IAuthorize.sol";
 import "../interfaces/IVault.sol";
@@ -12,37 +13,20 @@ import "../interfaces/IVault.sol";
  * @title LiteVault
  * @notice A simple vault that allows users to deposit and withdraw tokens.
  */
-contract LiteVault is IVault, ReentrancyGuard {
+contract LiteVault is IVault, ReentrancyGuard, Ownable {
     /// @dev Using SafeERC20 to support non fully ERC20-compliant tokens,
     /// that may not return a boolean value on success.
     using SafeERC20 for IERC20;
-
-    /**
-     * @notice Error thrown when the caller is not the owner of the contract.
-     * @param account The caller of the function that is not the owner.
-     */
-    error NotOwner(address account);
 
     // Mapping from user to token to balances
     mapping(address => mapping(address => uint256)) internal _balances;
 
     IAuthorize public authorizer;
-    address public immutable owner;
-
-    /**
-     * @dev Modifier to check if the caller is the owner of the contract.
-     */
-    modifier onlyOwner() {
-        if (msg.sender != owner) revert NotOwner(msg.sender);
-        _;
-    }
 
     /**
      * @dev Constructor sets the initial owner of the contract.
      */
-    constructor(address owner_) {
-        owner = owner_;
-    }
+    constructor(address owner) Ownable(owner) {}
 
     /**
      * @dev Returns the balance of the specified token for a user.
