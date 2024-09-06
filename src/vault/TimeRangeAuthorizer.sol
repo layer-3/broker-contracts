@@ -36,12 +36,7 @@ contract TimeRangeAuthorizer is IAuthorize {
      * @dev Authorizes actions only outside the specified time range.
      * @return True if the current time is outside the specified time range, false otherwise.
      */
-    function authorize(
-        address,
-        address,
-        uint256
-    ) external view override returns (bool) {
-        return
-            block.timestamp < startTimestamp || block.timestamp > endTimestamp;
+    function authorize(address, address, uint256) external view override returns (bool) {
+        return block.timestamp < startTimestamp || block.timestamp > endTimestamp;
     }
 }

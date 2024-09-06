@@ -27,11 +27,7 @@ contract TimeRangeAuthorizerTest is Test {
 
     function test_constructorInvalidTimeRange() public {
         vm.expectRevert(
-            abi.encodeWithSelector(
-                TimeRangeAuthorizer.InvalidTimeRange.selector,
-                endTimestamp,
-                startTimestamp
-            )
+            abi.encodeWithSelector(TimeRangeAuthorizer.InvalidTimeRange.selector, endTimestamp, startTimestamp)
         );
         new TimeRangeAuthorizer(endTimestamp, startTimestamp);
     }

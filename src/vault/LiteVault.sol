@@ -34,10 +34,7 @@ contract LiteVault is IVault, ReentrancyGuard, Ownable {
      * @param token The address of the token. Use address(0) for ETH.
      * @return The balance of the specified token for the user.
      */
-    function balanceOf(
-        address user,
-        address token
-    ) public view override returns (uint256) {
+    function balanceOf(address user, address token) public view override returns (uint256) {
         return _balances[user][token];
     }
 
@@ -47,10 +44,7 @@ contract LiteVault is IVault, ReentrancyGuard, Ownable {
      * @param tokens The addresses of the tokens. Use address(0) for ETH.
      * @return The balances of the specified tokens for the user.
      */
-    function balancesOfTokens(
-        address user,
-        address[] calldata tokens
-    ) external view returns (uint256[] memory) {
+    function balancesOfTokens(address user, address[] calldata tokens) external view returns (uint256[] memory) {
         uint256[] memory balances = new uint256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
             balances[i] = _balances[user][tokens[i]];
@@ -89,10 +83,7 @@ contract LiteVault is IVault, ReentrancyGuard, Ownable {
      * @param token The address of the token to withdraw. Use address(0) for ETH.
      * @param amount The amount of tokens or ETH to withdraw.
      */
-    function withdraw(
-        address token,
-        uint256 amount
-    ) external override nonReentrant {
+    function withdraw(address token, uint256 amount) external override nonReentrant {
         uint256 currentBalance = _balances[msg.sender][token];
         if (currentBalance < amount) {
             revert InsufficientBalance(token, amount, currentBalance);
