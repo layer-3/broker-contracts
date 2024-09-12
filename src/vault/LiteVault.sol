@@ -19,8 +19,7 @@ contract LiteVault is IVault, IAuthorizable, ReentrancyGuard, Ownable {
     /// that may not return a boolean value on success.
     using SafeERC20 for IERC20;
 
-    // Mapping from user to token to balances
-    mapping(address => mapping(address => uint256)) internal _balances;
+    mapping(address user => mapping(address token => uint256 balance)) internal _balances;
 
     IAuthorize public authorizer;
 
