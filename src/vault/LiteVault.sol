@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -14,7 +14,7 @@ import "../interfaces/IVault.sol";
  * @title LiteVault
  * @notice A simple vault that allows users to deposit and withdraw tokens.
  */
-contract LiteVault is IVault, IAuthorizable, ReentrancyGuard, Ownable {
+contract LiteVault is IVault, IAuthorizable, ReentrancyGuard, Ownable2Step {
     /// @dev Using SafeERC20 to support non fully ERC20-compliant tokens,
     /// that may not return a boolean value on success.
     using SafeERC20 for IERC20;
