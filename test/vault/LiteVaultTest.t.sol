@@ -143,6 +143,14 @@ contract LiteVaultTest is Test {
         vault.setAuthorizer(IAuthorize(address(0)));
     }
 
+    function test_setAuthorizer_emitEvent() public {
+        TrueAuthorize newAuthorizer = new TrueAuthorize();
+        vm.expectEmit(true, true, true, true);
+        emit IAuthorizable.AuthorizerChanged(newAuthorizer);
+        vm.prank(owner);
+        vault.setAuthorizer(newAuthorizer);
+    }
+
     function test_depositSuccessEth() public {
         uint256 amount = 42e5;
         vm.deal(someone, amount);

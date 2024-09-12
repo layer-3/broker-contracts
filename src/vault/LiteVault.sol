@@ -7,13 +7,14 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "../interfaces/IAuthorize.sol";
+import "../interfaces/IAuthorizable.sol";
 import "../interfaces/IVault.sol";
 
 /**
  * @title LiteVault
  * @notice A simple vault that allows users to deposit and withdraw tokens.
  */
-contract LiteVault is IVault, ReentrancyGuard, Ownable {
+contract LiteVault is IVault, IAuthorizable, ReentrancyGuard, Ownable {
     /// @dev Using SafeERC20 to support non fully ERC20-compliant tokens,
     /// that may not return a boolean value on success.
     using SafeERC20 for IERC20;
@@ -67,6 +68,7 @@ contract LiteVault is IVault, ReentrancyGuard, Ownable {
         }
 
         authorizer = newAuthorizer;
+        emit AuthorizerChanged(newAuthorizer);
     }
 
     /**
