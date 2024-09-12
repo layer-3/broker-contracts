@@ -26,7 +26,12 @@ contract LiteVault is IVault, ReentrancyGuard, Ownable {
     /**
      * @dev Constructor sets the initial owner of the contract.
      */
-    constructor(address owner) Ownable(owner) {}
+    constructor(address owner, IAuthorize authorizer_) Ownable(owner) {
+        if (address(authorizer_) == address(0)) {
+            revert InvalidAddress();
+        }
+        authorizer = authorizer_;
+    }
 
     /**
      * @dev Returns the balance of the specified token for a user.
@@ -57,6 +62,10 @@ contract LiteVault is IVault, ReentrancyGuard, Ownable {
      * @param newAuthorizer The address of the authorizer contract.
      */
     function setAuthorizer(IAuthorize newAuthorizer) external onlyOwner {
+        if (address(newAuthorizer) == address(0)) {
+            revert InvalidAddress();
+        }
+
         authorizer = newAuthorizer;
     }
 

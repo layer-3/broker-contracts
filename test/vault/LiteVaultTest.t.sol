@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 import {CostlyReceiver} from "./CostlyReceiver.sol";
 import "../../src/vault/LiteVault.sol";
 import "../../src/interfaces/IVault.sol";
+import "../../src/interfaces/IAuthorize.sol";
 import "./MockedAuthorizer.sol";
 import "../TestERC20.sol";
 
@@ -25,9 +26,8 @@ contract LiteVaultTest is Test {
     function setUp() public {
         trueAuthorizer = new TrueAuthorize();
         vm.prank(deployer);
-        vault = new LiteVault(owner);
+        vault = new LiteVault(owner, trueAuthorizer);
         vm.prank(owner);
-        vault.setAuthorizer(trueAuthorizer);
 
         token1 = new TestERC20("Test1", "TST1", 18, type(uint256).max);
         token2 = new TestERC20("Test2", "TST2", 18, type(uint256).max);
@@ -37,6 +37,12 @@ contract LiteVaultTest is Test {
 
     function test_constructor() public view {
         assertEq(vault.owner(), owner);
+        assertEq(address(vault.authorizer()), address(trueAuthorizer));
+    }
+
+    function test_constructor_revert_ifInvalidAuthorizerAddress() public {
+        vm.expectRevert(abi.encodeWithSelector(IVault.InvalidAddress.selector));
+        new LiteVault(owner, IAuthorize(address(0)));
     }
 
     function test_balanceOf() public {
@@ -129,6 +135,12 @@ contract LiteVaultTest is Test {
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, someone));
         vm.prank(someone);
         vault.setAuthorizer(newAuthorizer);
+    }
+
+    function test_revertSetAuthorizerIfAuthorizerZeroAddress() public {
+        vm.expectRevert(abi.encodeWithSelector(IVault.InvalidAddress.selector));
+        vm.prank(owner);
+        vault.setAuthorizer(IAuthorize(address(0)));
     }
 
     function test_depositSuccessEth() public {
