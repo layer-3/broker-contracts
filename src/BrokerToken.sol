@@ -11,6 +11,11 @@ contract BrokerToken is ERC20Permit {
     uint8 private immutable _decimals;
 
     /**
+     * @notice Error thrown when the address supplied with the function call is invalid.
+     */
+    error InvalidAddress();
+
+    /**
      * @dev Simple constructor, passing arguments to ERC20Permit and ERC20 constructors.
      * Mints the supply to the deployer.
      * @param name Name of the Token.
@@ -22,6 +27,10 @@ contract BrokerToken is ERC20Permit {
         ERC20Permit(name)
         ERC20(name, symbol)
     {
+        if (beneficiary == address(0)) {
+            revert InvalidAddress();
+        }
+
         _decimals = decimals_;
         _mint(beneficiary, supply);
     }

@@ -16,16 +16,21 @@ contract BrokerTokenTest is Test {
         token = new BrokerToken("Canary", "CANARY", DECIMALS, TOKEN_SUPPLY, beneficiary);
     }
 
-    function test_nameAndSymbol() public view {
+    function test_constructor_revert_ifBeneficiaryIsZero() public {
+        vm.expectRevert(abi.encodeWithSelector(BrokerToken.InvalidAddress.selector));
+        new BrokerToken("Canary", "CANARY", DECIMALS, TOKEN_SUPPLY, address(0));
+    }
+
+    function tes_constructort_nameAndSymbol() public view {
         assertEq(token.name(), "Canary");
         assertEq(token.symbol(), "CANARY");
     }
 
-    function test_decimals() public view {
+    function test_constructor_decimals() public view {
         assertEq(token.decimals(), DECIMALS);
     }
 
-    function test_supplyMintedToBeneficiary() public view {
+    function test_constructor_supplyMintedToBeneficiary() public view {
         assertEq(token.balanceOf(beneficiary), TOKEN_SUPPLY);
     }
 }
