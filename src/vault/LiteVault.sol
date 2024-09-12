@@ -76,14 +76,14 @@ contract LiteVault is IVault, IAuthorizable, ReentrancyGuard, Ownable {
      * @param token The address of the token to deposit. Use address(0) for ETH.
      * @param amount The amount of tokens or ETH to deposit.
      */
-    function deposit(address token, uint256 amount) public payable override {
+    function deposit(address token, uint256 amount) public payable override nonReentrant {
         if (token == address(0)) {
             if (msg.value != amount) revert IncorrectValue();
             _balances[msg.sender][address(0)] += amount;
         } else {
             if (msg.value != 0) revert IncorrectValue();
-            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
             _balances[msg.sender][token] += amount;
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         }
 
         emit Deposited(msg.sender, token, amount);
