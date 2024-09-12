@@ -2,10 +2,11 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import "../src/vault/LiteVault.sol";
-import "../src/interfaces/IVault.sol";
+
+import "../../src/vault/LiteVault.sol";
+import "../../src/interfaces/IVault.sol";
 import "./MockedAuthorizer.sol";
-import "./TestERC20.sol";
+import "../TestERC20.sol";
 
 contract LiteVaultTest is Test {
     LiteVault vault;
