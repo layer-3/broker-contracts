@@ -40,7 +40,7 @@ contract LiteVault is IVault, IAuthorizable, ReentrancyGuard, Ownable {
      * @param token The address of the token. Use address(0) for ETH.
      * @return The balance of the specified token for the user.
      */
-    function balanceOf(address user, address token) public view returns (uint256) {
+    function balanceOf(address user, address token) external view returns (uint256) {
         return _balances[user][token];
     }
 
@@ -76,7 +76,7 @@ contract LiteVault is IVault, IAuthorizable, ReentrancyGuard, Ownable {
      * @param token The address of the token to deposit. Use address(0) for ETH.
      * @param amount The amount of tokens or ETH to deposit.
      */
-    function deposit(address token, uint256 amount) public payable nonReentrant {
+    function deposit(address token, uint256 amount) external payable nonReentrant {
         if (token == address(0)) {
             if (msg.value != amount) revert IncorrectValue();
             _balances[msg.sender][address(0)] += amount;
