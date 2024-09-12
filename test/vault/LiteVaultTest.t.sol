@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 
+import {CostlyReceiver} from "./CostlyReceiver.sol";
 import "../../src/vault/LiteVault.sol";
 import "../../src/interfaces/IVault.sol";
 import "./MockedAuthorizer.sol";
@@ -204,6 +205,24 @@ contract LiteVaultTest is Test {
         vm.prank(someone);
         vault.withdraw(address(0), withdrawAmount);
         assertEq(someone.balance, withdrawAmount);
+        assertEq(address(vault).balance, ethBalance + depositAmount - withdrawAmount);
+    }
+
+    function test_withdrawETH_costlyReceiver() public {
+        CostlyReceiver receiver = new CostlyReceiver();
+
+        uint256 depositAmount = 42e5;
+        uint256 withdrawAmount = 42e4;
+
+        // Deposit ETH first
+        vm.deal(address(receiver), depositAmount);
+        vm.prank(address(receiver));
+        vault.deposit{value: depositAmount}(address(0), depositAmount);
+
+        // Withdraw ETH
+        vm.prank(address(receiver));
+        vault.withdraw(address(0), withdrawAmount);
+        assertEq(address(receiver).balance, withdrawAmount);
         assertEq(address(vault).balance, ethBalance + depositAmount - withdrawAmount);
     }
 

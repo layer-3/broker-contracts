@@ -36,6 +36,11 @@ interface IVault {
     error InsufficientBalance(address token, uint256 required, uint256 available);
 
     /**
+     * @notice Error thrown when the transfer of Eth fails.
+     */
+    error NativeTransferFailed();
+
+    /**
      * @dev Returns the balance of a specified token for a user.
      * @param user The address of the user.
      * @param token The address of the token. Use address(0) for ETH.

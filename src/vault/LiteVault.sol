@@ -95,7 +95,11 @@ contract LiteVault is IVault, ReentrancyGuard, Ownable {
         _balances[msg.sender][token] -= amount;
 
         if (token == address(0)) {
-            payable(msg.sender).transfer(amount);
+            /// @dev using `call` instead of `transfer` to overcome 2300 gas ceiling that could make it revert with some AA wallets
+            (bool success,) = msg.sender.call{value: amount}("");
+            if (!success) {
+                revert NativeTransferFailed();
+            }
         } else {
             IERC20(token).safeTransfer(msg.sender, amount);
         }
