@@ -1,24 +1,31 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
 import "forge-std/Test.sol";
 
 import {CostlyReceiver} from "./CostlyReceiver.sol";
-import "../../src/vault/LiteVault.sol";
+import {TestLiteVault} from "../../src/vault/test/TestLiteVault.sol";
 import "../../src/interfaces/IVault.sol";
 import "../../src/interfaces/IAuthorize.sol";
+import {IAuthorizable} from "../../src/interfaces/IAuthorizable.sol";
 import "./MockedAuthorizer.sol";
 import "../TestERC20.sol";
 
+uint256 constant TIME = 1716051867;
+
 contract LiteVaultTest is Test {
-    LiteVault vault;
+    TestLiteVault vault;
     TestERC20 token1;
     TestERC20 token2;
     TrueAuthorize trueAuthorizer;
 
-    address deployer = address(1);
-    address owner = address(2);
-    address someone = address(3);
+    address deployer = vm.createWallet("deployer").addr;
+    address owner = vm.createWallet("owner").addr;
+    address someone = vm.createWallet("someone").addr;
+
+    uint64 public constant WITHDRAWAL_GRACE_PERIOD = 3 days;
 
     uint256 ethBalance = 1 ether;
     uint256 token1Balance = 42e6;
@@ -26,8 +33,9 @@ contract LiteVaultTest is Test {
     function setUp() public {
         trueAuthorizer = new TrueAuthorize();
         vm.prank(deployer);
-        vault = new LiteVault(owner, trueAuthorizer);
-        vm.prank(owner);
+        vault = new TestLiteVault(owner, trueAuthorizer);
+        // warp to fhe future so that grace period is not active
+        vm.warp(TIME);
 
         token1 = new TestERC20("Test1", "TST1", 18, type(uint256).max);
         token2 = new TestERC20("Test2", "TST2", 18, type(uint256).max);
@@ -42,7 +50,7 @@ contract LiteVaultTest is Test {
 
     function test_constructor_revert_ifInvalidAuthorizerAddress() public {
         vm.expectRevert(abi.encodeWithSelector(IVault.InvalidAddress.selector));
-        new LiteVault(owner, IAuthorize(address(0)));
+        new TestLiteVault(owner, IAuthorize(address(0)));
     }
 
     function test_balanceOf() public {
@@ -123,11 +131,42 @@ contract LiteVaultTest is Test {
         assertEq(balances[2], token2Amount);
     }
 
+    function test_isWithdrawGracePeriodActive() public view {
+        uint64 now_ = 1716051867;
+
+        // Grace period is active
+
+        uint64 latestSetAuthorizerTimestamp = now_ - 2 days;
+        assert(vault.exposed_isWithdrawalGracePeriodActive(latestSetAuthorizerTimestamp, now_, WITHDRAWAL_GRACE_PERIOD));
+
+        latestSetAuthorizerTimestamp = now_ - 2 days - 23 hours;
+        assert(vault.exposed_isWithdrawalGracePeriodActive(latestSetAuthorizerTimestamp, now_, WITHDRAWAL_GRACE_PERIOD));
+
+        // Grace period is not active
+
+        latestSetAuthorizerTimestamp = now_ - 3 days - 1 minutes;
+        assert(
+            !vault.exposed_isWithdrawalGracePeriodActive(latestSetAuthorizerTimestamp, now_, WITHDRAWAL_GRACE_PERIOD)
+        );
+
+        latestSetAuthorizerTimestamp = now_ - 4 days;
+        assert(
+            !vault.exposed_isWithdrawalGracePeriodActive(latestSetAuthorizerTimestamp, now_, WITHDRAWAL_GRACE_PERIOD)
+        );
+    }
+
     function test_successSetAuthorizerIfOwner() public {
         TrueAuthorize newAuthorizer = new TrueAuthorize();
         vm.prank(owner);
         vault.setAuthorizer(newAuthorizer);
         assertEq(address(vault.authorizer()), address(newAuthorizer));
+    }
+
+    function test_updateSetAuthTimestamp_ifAuthSet() public {
+        TrueAuthorize newAuthorizer = new TrueAuthorize();
+        vm.prank(owner);
+        vault.setAuthorizer(newAuthorizer);
+        assertEq(vault.latestSetAuthorizerTimestamp(), block.timestamp);
     }
 
     function test_revertSetAuthorizerIfNotOwner() public {
@@ -269,6 +308,8 @@ contract LiteVaultTest is Test {
         vm.prank(owner);
         vault.setAuthorizer(falseAuth);
 
+        vm.warp(TIME + WITHDRAWAL_GRACE_PERIOD);
+
         uint256 depositAmount = 42e5;
         uint256 withdrawAmount = 42e4;
 
@@ -289,6 +330,8 @@ contract LiteVaultTest is Test {
         vm.prank(owner);
         vault.setAuthorizer(falseAuth);
 
+        vm.warp(TIME + WITHDRAWAL_GRACE_PERIOD);
+
         uint256 depositAmount = 42e5;
         uint256 withdrawAmount = 42e4;
 
@@ -305,6 +348,61 @@ contract LiteVaultTest is Test {
         );
         vm.prank(someone);
         vault.withdraw(address(token1), withdrawAmount);
+    }
+
+    function test_withdrawERC20_ifAuthorizerHasChanged() public {
+        FalseAuthorize newAuthorizer = new FalseAuthorize();
+        vm.prank(owner);
+        vault.setAuthorizer(newAuthorizer);
+
+        uint256 time = TIME + WITHDRAWAL_GRACE_PERIOD;
+        vm.warp(time);
+
+        uint256 depositAmount = 42e5;
+        uint256 withdraw1Amount = 42e4;
+        uint256 withdraw2Amount = 1e4;
+
+        // Deposit tokens first
+        token1.mint(someone, depositAmount);
+        vm.startPrank(someone);
+        token1.approve(address(vault), type(uint256).max);
+        vault.deposit(address(token1), depositAmount);
+        vm.stopPrank();
+
+        time += 1 days;
+        vm.warp(time);
+
+        // Revert on withdraw
+        vm.expectRevert(
+            abi.encodeWithSelector(IAuthorize.Unauthorized.selector, someone, address(token1), withdraw1Amount)
+        );
+        vm.prank(someone);
+        vault.withdraw(address(token1), withdraw1Amount);
+
+        // Change authorizer
+        newAuthorizer = new FalseAuthorize();
+        vm.prank(owner);
+        vault.setAuthorizer(newAuthorizer);
+
+        time += 1 days;
+        vm.warp(time);
+
+        // Withdraw tokens
+        vm.prank(someone);
+        vault.withdraw(address(token1), withdraw1Amount);
+        assertEq(token1.balanceOf(someone), withdraw1Amount);
+        assertEq(vault.balanceOf(someone, address(token1)), depositAmount - withdraw1Amount);
+
+        // Grace period has ended
+        time += WITHDRAWAL_GRACE_PERIOD;
+        vm.warp(time);
+
+        // Revert on withdraw
+        vm.expectRevert(
+            abi.encodeWithSelector(IAuthorize.Unauthorized.selector, someone, address(token1), withdraw2Amount)
+        );
+        vm.prank(someone);
+        vault.withdraw(address(token1), withdraw2Amount);
     }
 
     function test_ERC20FullFlow() public {

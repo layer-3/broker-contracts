@@ -19,9 +19,12 @@ contract LiteVault is IVault, IAuthorizable, ReentrancyGuard, Ownable2Step {
     /// that may not return a boolean value on success.
     using SafeERC20 for IERC20;
 
+    uint64 public constant WITHDRAWAL_GRACE_PERIOD = 3 days;
+
     mapping(address user => mapping(address token => uint256 balance)) internal _balances;
 
     IAuthorize public authorizer;
+    uint64 public latestSetAuthorizerTimestamp;
 
     /**
      * @dev Constructor sets the initial owner of the contract.
@@ -67,6 +70,7 @@ contract LiteVault is IVault, IAuthorizable, ReentrancyGuard, Ownable2Step {
         }
 
         authorizer = newAuthorizer;
+        latestSetAuthorizerTimestamp = uint64(block.timestamp);
         emit AuthorizerChanged(newAuthorizer);
     }
 
@@ -98,7 +102,11 @@ contract LiteVault is IVault, IAuthorizable, ReentrancyGuard, Ownable2Step {
         if (currentBalance < amount) {
             revert InsufficientBalance(token, amount, currentBalance);
         }
-        if (!authorizer.authorize(msg.sender, token, amount)) {
+        if (
+            !_isWithdrawalGracePeriodActive(
+                latestSetAuthorizerTimestamp, uint64(block.timestamp), WITHDRAWAL_GRACE_PERIOD
+            ) && !authorizer.authorize(msg.sender, token, amount)
+        ) {
             revert IAuthorize.Unauthorized(msg.sender, token, amount);
         }
 
@@ -115,5 +123,13 @@ contract LiteVault is IVault, IAuthorizable, ReentrancyGuard, Ownable2Step {
         }
 
         emit Withdrawn(msg.sender, token, amount);
+    }
+
+    function _isWithdrawalGracePeriodActive(uint64 latestSetAuthorizerTimestamp_, uint64 now_, uint64 gracePeriod)
+        internal
+        pure
+        returns (bool)
+    {
+        return latestSetAuthorizerTimestamp_ + gracePeriod > now_;
     }
 }
