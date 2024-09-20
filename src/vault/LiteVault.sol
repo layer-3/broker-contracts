@@ -125,6 +125,12 @@ contract LiteVault is IVault, IAuthorizable, ReentrancyGuard, Ownable2Step {
         emit Withdrawn(msg.sender, token, amount);
     }
 
+    /**
+     * @notice Returns whether the withdrawal grace period is active, i.e. whether a user can withdraw without authorization.
+     * @param latestSetAuthorizerTimestamp_ Timestamp when the authorizer was last set.
+     * @param now_ Timestamp when the check is performed.
+     * @param gracePeriod The duration of the grace period.
+     */
     function _isWithdrawalGracePeriodActive(uint64 latestSetAuthorizerTimestamp_, uint64 now_, uint64 gracePeriod)
         internal
         pure
