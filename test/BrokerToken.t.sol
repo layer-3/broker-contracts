@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "forge-std/Test.sol";
-import "../src/BrokerToken.sol";
+import {Test} from "forge-std/Test.sol";
+import {BrokerToken} from "../src/BrokerToken.sol";
 
 contract BrokerTokenTest is Test {
     BrokerToken token;

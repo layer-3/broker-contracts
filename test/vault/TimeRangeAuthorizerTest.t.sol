@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import "forge-std/Test.sol";
+import {Test, Vm} from "forge-std/Test.sol";
 
-import "../../src/vault/TimeRangeAuthorizer.sol";
+import {TimeRangeAuthorizer} from "../../src/vault/TimeRangeAuthorizer.sol";
 
 contract TimeRangeAuthorizerTest is Test {
     TimeRangeAuthorizer authorizer;
@@ -26,14 +26,14 @@ contract TimeRangeAuthorizerTest is Test {
         assertEq(authorizer.endTimestamp(), endTimestamp);
     }
 
-    function test_constructorInvalidTimeRange() public {
+    function test_constructor_reverts_ifInvalidTimeRange() public {
         vm.expectRevert(
             abi.encodeWithSelector(TimeRangeAuthorizer.InvalidTimeRange.selector, endTimestamp, startTimestamp)
         );
         new TimeRangeAuthorizer(endTimestamp, startTimestamp);
     }
 
-    function test_initialAuthorization() public {
+    function test_correctAuth_relariveToTimeRange() public {
         assertEq(authorizer.authorize(user, token, amount), true);
 
         vm.warp(startTimestamp);
