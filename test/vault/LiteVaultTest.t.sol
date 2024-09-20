@@ -3,19 +3,19 @@ pragma solidity 0.8.26;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-import "forge-std/Test.sol";
+import {Test, Vm} from "forge-std/Test.sol";
 
 import {CostlyReceiver} from "./CostlyReceiver.sol";
 import {TestLiteVault} from "../../src/vault/test/TestLiteVault.sol";
-import "../../src/interfaces/IVault.sol";
-import "../../src/interfaces/IAuthorize.sol";
+import {IVault} from "../../src/interfaces/IVault.sol";
+import {IAuthorize} from "../../src/interfaces/IAuthorize.sol";
 import {IAuthorizable} from "../../src/interfaces/IAuthorizable.sol";
-import "./MockedAuthorizer.sol";
-import "../TestERC20.sol";
+import {TrueAuthorize, FalseAuthorize} from "./MockedAuthorizer.sol";
+import {TestERC20} from "../TestERC20.sol";
 
 uint256 constant TIME = 1716051867;
 
-contract LiteVaultTest is Test {
+contract LiteVaultTestBase is Test {
     TestLiteVault vault;
     TestERC20 token1;
     TestERC20 token2;
@@ -30,7 +30,7 @@ contract LiteVaultTest is Test {
     uint256 ethBalance = 1 ether;
     uint256 token1Balance = 42e6;
 
-    function setUp() public {
+    function setUp() public virtual {
         trueAuthorizer = new TrueAuthorize();
         vm.prank(deployer);
         vault = new TestLiteVault(owner, trueAuthorizer);
@@ -42,17 +42,21 @@ contract LiteVaultTest is Test {
         token1.mint(address(vault), token1Balance);
         vm.deal(address(vault), ethBalance);
     }
+}
 
-    function test_constructor() public view {
+contract LiteVaultTest_constructor is LiteVaultTestBase {
+    function test_correctOwnerAndAuthorizer() public view {
         assertEq(vault.owner(), owner);
         assertEq(address(vault.authorizer()), address(trueAuthorizer));
     }
 
-    function test_constructor_revert_ifInvalidAuthorizerAddress() public {
+    function test_revert_ifInvalidAuthorizerAddress() public {
         vm.expectRevert(abi.encodeWithSelector(IVault.InvalidAddress.selector));
         new TestLiteVault(owner, IAuthorize(address(0)));
     }
+}
 
+contract LiteVaultTest is LiteVaultTestBase {
     function test_balanceOf() public {
         // zero balances at start
         assertEq(vault.balanceOf(address(vault), address(0)), 0);
@@ -154,8 +158,10 @@ contract LiteVaultTest is Test {
             !vault.exposed_isWithdrawalGracePeriodActive(latestSetAuthorizerTimestamp, now_, WITHDRAWAL_GRACE_PERIOD)
         );
     }
+}
 
-    function test_successSetAuthorizerIfOwner() public {
+contract LiteVaultTest_setAuthorizer is LiteVaultTestBase {
+    function test_success_IfOwner() public {
         TrueAuthorize newAuthorizer = new TrueAuthorize();
         vm.prank(owner);
         vault.setAuthorizer(newAuthorizer);
@@ -169,105 +175,106 @@ contract LiteVaultTest is Test {
         assertEq(vault.latestSetAuthorizerTimestamp(), block.timestamp);
     }
 
-    function test_revertSetAuthorizerIfNotOwner() public {
+    function test_revert_ifNotOwner() public {
         FalseAuthorize newAuthorizer = new FalseAuthorize();
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, someone));
         vm.prank(someone);
         vault.setAuthorizer(newAuthorizer);
     }
 
-    function test_revertSetAuthorizerIfAuthorizerZeroAddress() public {
+    function test_revert_ifAuthorizerZeroAddress() public {
         vm.expectRevert(abi.encodeWithSelector(IVault.InvalidAddress.selector));
         vm.prank(owner);
         vault.setAuthorizer(IAuthorize(address(0)));
     }
 
-    function test_setAuthorizer_emitEvent() public {
+    function test_emitEvent() public {
         TrueAuthorize newAuthorizer = new TrueAuthorize();
         vm.expectEmit(true, true, true, true);
         emit IAuthorizable.AuthorizerChanged(newAuthorizer);
         vm.prank(owner);
         vault.setAuthorizer(newAuthorizer);
     }
+}
 
-    function test_depositSuccessEth() public {
-        uint256 amount = 42e5;
-        vm.deal(someone, amount);
+contract LiteVaultTest_deposit is LiteVaultTestBase {
+    uint256 public constant ETH_AMOUNT = 42e5;
+    uint256 public constant ERC20_AMOUNT = 424e6;
 
+    function setUp() public virtual override {
+        super.setUp();
+        vm.deal(someone, ETH_AMOUNT);
+        token1.mint(someone, ERC20_AMOUNT);
         vm.prank(someone);
-        vault.deposit{value: amount}(address(0), amount);
-        assertEq(address(vault).balance, ethBalance + amount);
+        token1.approve(address(vault), type(uint256).max);
+    }
+
+    function test_success_ETH() public {
+        vm.prank(someone);
+        vault.deposit{value: ETH_AMOUNT}(address(0), ETH_AMOUNT);
+        assertEq(address(vault).balance, ethBalance + ETH_AMOUNT);
         assertEq(someone.balance, 0);
     }
 
-    function test_depositSuccessERC20() public {
-        uint256 amount = 42e5;
-        token1.mint(someone, amount);
-
+    function test_success_ERC20() public {
         vm.prank(someone);
-        token1.approve(address(vault), type(uint256).max);
-        vm.prank(someone);
-        vault.deposit(address(token1), amount);
-        assertEq(token1.balanceOf(address(vault)), token1Balance + amount);
+        vault.deposit(address(token1), ERC20_AMOUNT);
+        assertEq(token1.balanceOf(address(vault)), token1Balance + ERC20_AMOUNT);
         assertEq(token1.balanceOf(someone), 0);
     }
 
-    function test_depositRevertIfEthNoMsgValue() public {
+    function test_revert_ifEthNoMsgValue() public {
         vm.expectRevert(abi.encodeWithSelector(IVault.IncorrectValue.selector));
         vm.prank(someone);
         vault.deposit(address(0), 42e5);
     }
 
-    function test_depositRevertIfEthIncorrectMsgValue() public {
-        uint256 amount = 42e5;
-        vm.deal(someone, amount * 2);
+    function test_revert_ifEthIncorrectMsgValue() public {
         vm.expectRevert(abi.encodeWithSelector(IVault.IncorrectValue.selector));
         vm.prank(someone);
-        vault.deposit{value: amount + 42}(address(0), amount);
+        vault.deposit{value: ETH_AMOUNT - 42}(address(0), ETH_AMOUNT);
     }
 
-    function test_depositRevertIfERC20AndValue() public {
-        uint256 amount = 42e5;
-        token1.mint(someone, amount);
-        vm.deal(someone, amount);
-
-        vm.prank(someone);
-        token1.approve(address(vault), type(uint256).max);
+    function test_revert_ifERC20AndValue() public {
         vm.expectRevert(abi.encodeWithSelector(IVault.IncorrectValue.selector));
         vm.prank(someone);
-        vault.deposit{value: 42}(address(token1), amount);
+        vault.deposit{value: 42}(address(token1), ERC20_AMOUNT);
     }
 
-    function test_emitsEventDeposited() public {
-        uint256 amount = 42e5;
-        token1.mint(someone, amount);
-
-        vm.prank(someone);
-        token1.approve(address(vault), type(uint256).max);
-
+    function test_emitsEvent() public {
         vm.expectEmit(true, true, true, true);
-        emit IVault.Deposited(someone, address(token1), amount);
+        emit IVault.Deposited(someone, address(token1), ERC20_AMOUNT);
         vm.prank(someone);
-        vault.deposit(address(token1), amount);
+        vault.deposit(address(token1), ERC20_AMOUNT);
+    }
+}
+
+contract LiteVaultTest_withdraw is LiteVaultTestBase {
+    uint256 public constant ETH_DEP_AMOUNT = 42e5;
+    uint256 public constant ERC20_DEP_AMOUNT = 424e6;
+    uint256 public constant ETH_WITH_AMOUNT = 41e5;
+    uint256 public constant ERC20_WITH_AMOUNT = 224e6;
+
+    function setUp() public virtual override {
+        super.setUp();
+        vm.deal(someone, ETH_DEP_AMOUNT);
+        token1.mint(someone, ERC20_DEP_AMOUNT);
+
+        vm.startPrank(someone);
+        vault.deposit{value: ETH_DEP_AMOUNT}(address(0), ETH_DEP_AMOUNT);
+        token1.approve(address(vault), type(uint256).max);
+        vault.deposit(address(token1), ERC20_DEP_AMOUNT);
+        vm.stopPrank();
     }
 
-    function test_withdrawETH() public {
-        uint256 depositAmount = 42e5;
-        uint256 withdrawAmount = 42e4;
-
-        // Deposit ETH first
-        vm.deal(someone, depositAmount);
+    function test_success_ETH() public {
         vm.prank(someone);
-        vault.deposit{value: depositAmount}(address(0), depositAmount);
-
-        // Withdraw ETH
-        vm.prank(someone);
-        vault.withdraw(address(0), withdrawAmount);
-        assertEq(someone.balance, withdrawAmount);
-        assertEq(address(vault).balance, ethBalance + depositAmount - withdrawAmount);
+        vault.withdraw(address(0), ETH_WITH_AMOUNT);
+        assertEq(someone.balance, ETH_WITH_AMOUNT);
+        assertEq(address(vault).balance, ethBalance + ETH_DEP_AMOUNT - ETH_WITH_AMOUNT);
     }
 
-    function test_withdrawETH_costlyReceiver() public {
+    function test_success_ETH_costlyReceiver() public {
         CostlyReceiver receiver = new CostlyReceiver();
 
         uint256 depositAmount = 42e5;
@@ -282,170 +289,97 @@ contract LiteVaultTest is Test {
         vm.prank(address(receiver));
         vault.withdraw(address(0), withdrawAmount);
         assertEq(address(receiver).balance, withdrawAmount);
-        assertEq(address(vault).balance, ethBalance + depositAmount - withdrawAmount);
+        assertEq(address(vault).balance, ethBalance + ETH_DEP_AMOUNT + depositAmount - withdrawAmount);
     }
 
-    function test_withdrawERC20() public {
-        uint256 depositAmount = 42e5;
-        uint256 withdrawAmount = 42e4;
-
-        // Deposit tokens first
-        token1.mint(someone, depositAmount);
-        vm.startPrank(someone);
-        token1.approve(address(vault), type(uint256).max);
-        vault.deposit(address(token1), depositAmount);
-        vm.stopPrank();
-
+    function test_success_ERC20() public {
         // Withdraw tokens
         vm.prank(someone);
-        vault.withdraw(address(token1), withdrawAmount);
-        assertEq(token1.balanceOf(someone), withdrawAmount);
-        assertEq(vault.balanceOf(someone, address(token1)), depositAmount - withdrawAmount);
+        vault.withdraw(address(token1), ERC20_WITH_AMOUNT);
+        assertEq(token1.balanceOf(someone), ERC20_WITH_AMOUNT);
+        assertEq(vault.balanceOf(someone, address(token1)), ERC20_DEP_AMOUNT - ERC20_WITH_AMOUNT);
     }
 
-    function test_withdrawRevertIfUnauthorizedETH() public {
+    function test_revert_ifUnauthorizedETH() public {
         FalseAuthorize falseAuth = new FalseAuthorize();
         vm.prank(owner);
         vault.setAuthorizer(falseAuth);
 
         vm.warp(TIME + WITHDRAWAL_GRACE_PERIOD);
 
-        uint256 depositAmount = 42e5;
-        uint256 withdrawAmount = 42e4;
-
-        // Deposit tokens first
-        vm.deal(someone, depositAmount);
-        vm.startPrank(someone);
-        vault.deposit{value: depositAmount}(address(0), depositAmount);
-        vm.stopPrank();
-
         // Withdraw tokens
-        vm.expectRevert(abi.encodeWithSelector(IAuthorize.Unauthorized.selector, someone, address(0), withdrawAmount));
+        vm.expectRevert(abi.encodeWithSelector(IAuthorize.Unauthorized.selector, someone, address(0), ETH_WITH_AMOUNT));
         vm.prank(someone);
-        vault.withdraw(address(0), withdrawAmount);
+        vault.withdraw(address(0), ETH_WITH_AMOUNT);
     }
 
-    function test_withdrawRevertIfUnauthorizedERC20() public {
+    function test_revert_ifUnauthorizedERC20() public {
         FalseAuthorize falseAuth = new FalseAuthorize();
         vm.prank(owner);
         vault.setAuthorizer(falseAuth);
 
         vm.warp(TIME + WITHDRAWAL_GRACE_PERIOD);
-
-        uint256 depositAmount = 42e5;
-        uint256 withdrawAmount = 42e4;
-
-        // Deposit tokens first
-        token1.mint(someone, depositAmount);
-        vm.startPrank(someone);
-        token1.approve(address(vault), type(uint256).max);
-        vault.deposit(address(token1), depositAmount);
-        vm.stopPrank();
 
         // Withdraw tokens
         vm.expectRevert(
-            abi.encodeWithSelector(IAuthorize.Unauthorized.selector, someone, address(token1), withdrawAmount)
+            abi.encodeWithSelector(IAuthorize.Unauthorized.selector, someone, address(token1), ERC20_WITH_AMOUNT)
         );
         vm.prank(someone);
-        vault.withdraw(address(token1), withdrawAmount);
+        vault.withdraw(address(token1), ERC20_WITH_AMOUNT);
     }
 
-    function test_withdrawERC20_ifAuthorizerHasChanged() public {
+    function test_success_ERC20_ifGracePeriodActive() public {
+        // Change authorizer
         FalseAuthorize newAuthorizer = new FalseAuthorize();
         vm.prank(owner);
         vault.setAuthorizer(newAuthorizer);
 
-        uint256 time = TIME + WITHDRAWAL_GRACE_PERIOD;
-        vm.warp(time);
+        vm.warp(TIME + 1 days);
 
-        uint256 depositAmount = 42e5;
-        uint256 withdraw1Amount = 42e4;
-        uint256 withdraw2Amount = 1e4;
-
-        // Deposit tokens first
-        token1.mint(someone, depositAmount);
-        vm.startPrank(someone);
-        token1.approve(address(vault), type(uint256).max);
-        vault.deposit(address(token1), depositAmount);
-        vm.stopPrank();
-
-        time += 1 days;
-        vm.warp(time);
-
-        // Revert on withdraw
-        vm.expectRevert(
-            abi.encodeWithSelector(IAuthorize.Unauthorized.selector, someone, address(token1), withdraw1Amount)
-        );
+        // Withdraw tokens
         vm.prank(someone);
-        vault.withdraw(address(token1), withdraw1Amount);
+        vault.withdraw(address(token1), ERC20_WITH_AMOUNT);
+        assertEq(token1.balanceOf(someone), ERC20_WITH_AMOUNT);
+        assertEq(vault.balanceOf(someone, address(token1)), ERC20_DEP_AMOUNT - ERC20_WITH_AMOUNT);
+    }
 
+    function test_authRules_ETH_ifGracePeriodEnded() public {
         // Change authorizer
-        newAuthorizer = new FalseAuthorize();
+        FalseAuthorize newAuthorizer = new FalseAuthorize();
         vm.prank(owner);
         vault.setAuthorizer(newAuthorizer);
 
-        time += 1 days;
-        vm.warp(time);
-
-        // Withdraw tokens
-        vm.prank(someone);
-        vault.withdraw(address(token1), withdraw1Amount);
-        assertEq(token1.balanceOf(someone), withdraw1Amount);
-        assertEq(vault.balanceOf(someone, address(token1)), depositAmount - withdraw1Amount);
-
-        // Grace period has ended
-        time += WITHDRAWAL_GRACE_PERIOD;
-        vm.warp(time);
+        vm.warp(TIME + 1 hours + WITHDRAWAL_GRACE_PERIOD);
 
         // Revert on withdraw
+        vm.expectRevert(abi.encodeWithSelector(IAuthorize.Unauthorized.selector, someone, address(0), ETH_WITH_AMOUNT));
+        vm.prank(someone);
+        vault.withdraw(address(0), ETH_WITH_AMOUNT);
+    }
+
+    function test_revert_ifInsufficientBalance_ETH() public {
         vm.expectRevert(
-            abi.encodeWithSelector(IAuthorize.Unauthorized.selector, someone, address(token1), withdraw2Amount)
+            abi.encodeWithSelector(IVault.InsufficientBalance.selector, address(0), ETH_DEP_AMOUNT + 1, ETH_DEP_AMOUNT)
         );
         vm.prank(someone);
-        vault.withdraw(address(token1), withdraw2Amount);
+        vault.withdraw(address(0), ETH_DEP_AMOUNT + 1);
     }
 
-    function test_ERC20FullFlow() public {
-        uint256 depositAmount = token1Balance;
-        uint256 withdrawAmount = 42e4;
-
-        // Mint and deposit tokens
-        token2.mint(someone, depositAmount);
-        vm.startPrank(someone);
-        token2.approve(address(vault), type(uint256).max);
-        vault.deposit(address(token2), depositAmount);
-        vm.stopPrank();
-
-        assertEq(token2.balanceOf(address(vault)), depositAmount);
-
-        // Withdraw tokens
+    function test_revert_ifInsufficientBalance_ERC20() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IVault.InsufficientBalance.selector, address(token1), ERC20_DEP_AMOUNT + 1, ERC20_DEP_AMOUNT
+            )
+        );
         vm.prank(someone);
-        vault.withdraw(address(token2), withdrawAmount);
-        assertEq(token2.balanceOf(someone), withdrawAmount);
-        assertEq(token2.balanceOf(address(vault)), depositAmount - withdrawAmount);
+        vault.withdraw(address(token1), ERC20_DEP_AMOUNT + 1);
     }
 
-    function test_revertIfInsufficientBalance() public {
-        vm.expectRevert(abi.encodeWithSelector(IVault.InsufficientBalance.selector, address(token1), token1Balance, 0));
-        vm.prank(someone);
-        vault.withdraw(address(token1), token1Balance);
-    }
-
-    function test_emitsEventWithdrawn() public {
-        uint256 depositAmount = 42e5;
-        uint256 withdrawAmount = 42e4;
-
-        // Deposit tokens first
-        token1.mint(someone, depositAmount);
-        vm.startPrank(someone);
-        token1.approve(address(vault), type(uint256).max);
-        vault.deposit(address(token1), depositAmount);
-        vm.stopPrank();
-
+    function test_emitsEvent() public {
         // Withdraw tokens
         vm.expectEmit(true, true, true, true);
-        emit IVault.Withdrawn(someone, address(token1), withdrawAmount);
+        emit IVault.Withdrawn(someone, address(token1), ERC20_WITH_AMOUNT);
         vm.prank(someone);
-        vault.withdraw(address(token1), withdrawAmount);
+        vault.withdraw(address(token1), ERC20_WITH_AMOUNT);
     }
 }
