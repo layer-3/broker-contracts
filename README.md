@@ -1,27 +1,37 @@
-## Foundry
+# Broker Contracts
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+This repository contains smart contracts for the Broker entity in the Yellow Network.
 
-Foundry consists of:
+## Contracts
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+### BrokerToken
 
-## Documentation
+Broker and Canary utility token is a simple ERC20 token with permit functionality. All the supply is minted to the deployer.
+
+### LiteVault
+
+A simple vault that allows users to deposit and withdraw tokens. Deposit is allowed regardless of the time, whereas withdrawal is allowed only when authorized by the Authorizer contract.
+LiteVault Owner can change the Authorizer contract, which will enable a grace withdrawal period for 3 days, during which users will be able to withdraw their funds.
+
+### TimeRangeAuthorizer
+
+Authorizer contract that authorize withdrawal regardless of token and amount, but only outside of the time range specified on deployment.
+
+## Deployment and interaction
+
+This repository uses Foundry toolchain for development, testing and deployment.
+
+### Documentation
 
 https://book.getfoundry.sh/
 
-## Usage
-
-### Build
+### Compile and generate artifacts
 
 ```shell
-$ forge build
+$ forge build [contract]
 ```
 
-### Generate interfaces
+### Generate LiteVault interface
 
 ```shell
 $ make all
@@ -30,7 +40,7 @@ $ make all
 ### Test
 
 ```shell
-$ forge test
+$ forge test []
 ```
 
 ### Format
@@ -45,28 +55,20 @@ $ forge fmt
 $ forge snapshot
 ```
 
-### Anvil
-
-```shell
-$ anvil
-```
-
 ### Deploy
 
 ```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+$ forge create <contract> --constructor-args [C_ARGS] -r $RPC_URL --private-key $PRIV_KEY [--optimizer-runs <runs> --via-ir]
 ```
 
-### Cast
+### Interact
+
+To interact with smart contracts, use `cast` command with either `call` or `send` subcommand to read or write data respectively.
 
 ```shell
-$ cast <subcommand>
+$ cast call <contract_address> "<method_signature>" [params] -r $RPC_URL
 ```
 
-### Help
-
 ```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+$ cast send <contract_address> "<method_signature>" [params] -r $RPC_URL --private-key $PRIV_KEY
 ```
