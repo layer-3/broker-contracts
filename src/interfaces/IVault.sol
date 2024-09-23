@@ -7,6 +7,11 @@ pragma solidity ^0.8.0;
  */
 interface IVault {
     /**
+     * @notice Error thrown when the address supplied with the function call is invalid.
+     */
+    error InvalidAddress();
+
+    /**
      * @notice Emitted when a user deposits tokens or ETH into the vault.
      * @param user The address of the user that deposited the tokens.
      * @param token The address of the token deposited or address(0) for ETH.
@@ -34,6 +39,11 @@ interface IVault {
      * @param available The amount of tokens that the user has.
      */
     error InsufficientBalance(address token, uint256 required, uint256 available);
+
+    /**
+     * @notice Error thrown when the transfer of Eth fails.
+     */
+    error NativeTransferFailed();
 
     /**
      * @dev Returns the balance of a specified token for a user.

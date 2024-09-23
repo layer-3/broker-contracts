@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.8.24;
+pragma solidity 0.8.26;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
@@ -9,6 +9,11 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
  */
 contract BrokerToken is ERC20Permit {
     uint8 private immutable _decimals;
+
+    /**
+     * @notice Error thrown when the address supplied with the function call is invalid.
+     */
+    error InvalidAddress();
 
     /**
      * @dev Simple constructor, passing arguments to ERC20Permit and ERC20 constructors.
@@ -22,6 +27,10 @@ contract BrokerToken is ERC20Permit {
         ERC20Permit(name)
         ERC20(name, symbol)
     {
+        if (beneficiary == address(0)) {
+            revert InvalidAddress();
+        }
+
         _decimals = decimals_;
         _mint(beneficiary, supply);
     }

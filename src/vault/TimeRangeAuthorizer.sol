@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.26;
 
 import "../interfaces/IAuthorize.sol";
 
@@ -15,8 +15,8 @@ contract TimeRangeAuthorizer is IAuthorize {
      */
     error InvalidTimeRange(uint256 startTimestamp, uint256 endTimestamp);
 
-    uint256 public startTimestamp;
-    uint256 public endTimestamp;
+    uint256 public immutable startTimestamp;
+    uint256 public immutable endTimestamp;
 
     /**
      * @dev Constructor sets the forbidden time range.
