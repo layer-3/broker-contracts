@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+pragma solidity ^0.8.0;
 
 contract CostlyReceiver {
     mapping(uint256 seed => uint256 value) public costlyValues;
