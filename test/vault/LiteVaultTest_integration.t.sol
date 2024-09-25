@@ -6,7 +6,7 @@ import {Test, Vm} from "forge-std/Test.sol";
 import {LiteVault} from "../../src/vault/LiteVault.sol";
 import {TestERC20} from "../TestERC20.sol";
 import {IAuthorize} from "../../src/interfaces/IAuthorize.sol";
-import {TrueAuthorize, FalseAuthorize} from "./MockedAuthorizer.sol";
+import {TrueAuthorize, FalseAuthorize} from "../../src/vault/test/MockedAuthorizer.sol";
 
 uint256 constant TIME = 1716051867;
 

@@ -10,7 +10,7 @@ import {TestLiteVault} from "../../src/vault/test/TestLiteVault.sol";
 import {IVault} from "../../src/interfaces/IVault.sol";
 import {IAuthorize} from "../../src/interfaces/IAuthorize.sol";
 import {IAuthorizable} from "../../src/interfaces/IAuthorizable.sol";
-import {TrueAuthorize, FalseAuthorize} from "./MockedAuthorizer.sol";
+import {TrueAuthorize, FalseAuthorize} from "../../src/vault/test/MockedAuthorizer.sol";
 import {TestERC20} from "../TestERC20.sol";
 
 uint256 constant TIME = 1716051867;
