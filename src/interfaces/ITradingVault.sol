@@ -95,7 +95,6 @@ interface ITradingVault {
     error InsufficientBalance(address token, uint256 required, uint256 available);
     error NativeTransferFailed();
 
-    error InvalidSignature();
     error NonceMismatch(uint256 expected, uint256 actual);
     error InvalidFundingLocation();
     error InvalidAssetOutcome();
@@ -107,10 +106,9 @@ interface ITradingVault {
     // NOTE: added a possibility to batch-deposit
     function deposit(ITradingStructs.Intent calldata intent) external payable;
 
-    function withdraw(ITradingStructs.Intent calldata intent, bytes calldata brokerSig) external;
+    function withdraw(ITradingStructs.Intent calldata intent, bytes calldata additionalAuthData) external;
 
-    function settle(ITradingStructs.Outcome calldata outcome, bytes calldata brokerSig) external;
+    function settle(ITradingStructs.Outcome calldata outcome, bytes calldata additionalAuthData) external;
 
-    /// @param brokerSig Broker signature over the incremented nonce of a latest settlement (either completed or liquidated)
-    function liquidate(ITradingStructs.Outcome calldata outcome, bytes calldata brokerSig) external;
+    function liquidate(ITradingStructs.Outcome calldata outcome, bytes calldata additionalAuthData) external;
 }
