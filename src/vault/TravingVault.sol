@@ -21,8 +21,7 @@ contract TradingVault is ITradingVault, ReentrancyGuard, Ownable2Step {
     using ECDSA for bytes32;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    mapping(address user => mapping(address token => uint256 balance))
-        internal _balances;
+    mapping(address user => mapping(address token => uint256 balance)) internal _balances;
     mapping(address user => uint256 session) internal _nonces;
 
     address public broker;
@@ -38,17 +37,11 @@ contract TradingVault is ITradingVault, ReentrancyGuard, Ownable2Step {
 
     // ---------- View functions ----------
 
-    function balanceOf(
-        address user,
-        address token
-    ) external view returns (uint256) {
+    function balanceOf(address user, address token) external view returns (uint256) {
         return _balances[user][token];
     }
 
-    function balancesOfTokens(
-        address user,
-        address[] calldata tokens
-    ) external view returns (uint256[] memory) {
+    function balancesOfTokens(address user, address[] calldata tokens) external view returns (uint256[] memory) {
         uint256[] memory balances = new uint256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
             balances[i] = _balances[user][tokens[i]];
@@ -62,9 +55,7 @@ contract TradingVault is ITradingVault, ReentrancyGuard, Ownable2Step {
         broker = broker_;
     }
 
-    function deposit(
-        ITradingStructs.Intent calldata intent
-    ) external payable notZeroAddress(intent.trader) {
+    function deposit(ITradingStructs.Intent calldata intent) external payable notZeroAddress(intent.trader) {
         address sender = msg.sender;
         address recipient = intent.trader;
         uint256 nonce = _nonces[recipient];
@@ -90,10 +81,10 @@ contract TradingVault is ITradingVault, ReentrancyGuard, Ownable2Step {
         }
     }
 
-    function withdraw(
-        ITradingStructs.Intent calldata intent,
-        bytes calldata brokerSig
-    ) external notZeroAddress(intent.trader) {
+    function withdraw(ITradingStructs.Intent calldata intent, bytes calldata brokerSig)
+        external
+        notZeroAddress(intent.trader)
+    {
         address account = intent.trader;
         uint256 nonce = _nonces[account];
         require(nonce == intent.nonce, NonceMismatch(nonce, intent.nonce));
@@ -113,16 +104,13 @@ contract TradingVault is ITradingVault, ReentrancyGuard, Ownable2Step {
             address asset = intent.allocations[i].asset;
             uint256 amount = intent.allocations[i].amount;
             uint256 currentBalance = _balances[account][asset];
-            require(
-                currentBalance >= amount,
-                InsufficientBalance(asset, amount, currentBalance)
-            );
+            require(currentBalance >= amount, InsufficientBalance(asset, amount, currentBalance));
 
             _balances[account][asset] -= amount;
 
             if (asset == address(0)) {
                 /// @dev using `call` instead of `transfer` to overcome 2300 gas ceiling that could make it revert with some AA wallets
-                (bool success, ) = account.call{value: amount}("");
+                (bool success,) = account.call{value: amount}("");
                 require(success, NativeTransferFailed());
             } else {
                 IERC20(asset).safeTransfer(account, amount);
@@ -132,133 +120,81 @@ contract TradingVault is ITradingVault, ReentrancyGuard, Ownable2Step {
         }
     }
 
-    function settle(
-        ITradingStructs.Outcome calldata outcome,
-        bytes calldata brokerSig
-    ) external {
+    function settle(ITradingStructs.Outcome calldata outcome, bytes calldata brokerSig) external {
         uint256 nonce = _nonces[outcome.trader];
         require(nonce == outcome.nonce, NonceMismatch(nonce, outcome.nonce));
-        _requireValidSigner(
-            broker,
-            abi.encode(outcome, ITradingVault.settle.selector),
-            brokerSig
-        );
+        _requireValidSigner(broker, abi.encode(outcome, ITradingVault.settle.selector), brokerSig);
 
         _nonces[outcome.trader]++;
 
-        _sendAssets(
-            outcome.trader,
-            broker,
-            outcome.brokerFundingDestination,
-            outcome.traderGives
-        );
-        _sendAssets(
-            broker,
-            outcome.trader,
-            outcome.traderFundingDestination,
-            outcome.brokerGives
-        );
+        _sendAssets(outcome.trader, broker, outcome.brokerFundingDestination, outcome.traderGives);
+        _sendAssets(broker, outcome.trader, outcome.traderFundingDestination, outcome.brokerGives);
 
         emit Settled(outcome.trader, nonce - 1);
     }
 
-    function liquidate(
-        ITradingStructs.Outcome calldata outcome,
-        bytes calldata brokerSig
-    ) external notZeroAddress(outcome.trader) {
+    function liquidate(ITradingStructs.Outcome calldata outcome, bytes calldata brokerSig)
+        external
+        notZeroAddress(outcome.trader)
+    {
         require(
-            outcome.traderFundingDestination ==
-                ITradingStructs.FundingLocation.TradingVault,
-            InvalidFundingLocation()
+            outcome.traderFundingDestination == ITradingStructs.FundingLocation.TradingVault, InvalidFundingLocation()
         );
         require(outcome.brokerGives.length == 0, InvalidAssetOutcome());
         uint256 nonce = _nonces[outcome.trader];
         require(nonce == outcome.nonce, NonceMismatch(nonce, outcome.nonce));
-        _requireValidSigner(
-            broker,
-            abi.encode(outcome, ITradingVault.liquidate.selector),
-            brokerSig
-        );
+        _requireValidSigner(broker, abi.encode(outcome, ITradingVault.liquidate.selector), brokerSig);
 
         _nonces[outcome.trader]++;
 
-        _sendAssets(
-            outcome.trader,
-            broker,
-            outcome.brokerFundingDestination,
-            outcome.traderGives
-        );
+        _sendAssets(outcome.trader, broker, outcome.brokerFundingDestination, outcome.traderGives);
 
         emit Liquidated(outcome.trader, nonce - 1);
     }
 
     // ---------- Internal functions ----------
-    function _requireValidSigner(
-        address expectedSigner,
-        bytes memory message,
-        bytes calldata sig
-    ) internal view {
+    function _requireValidSigner(address expectedSigner, bytes memory message, bytes calldata sig) internal view {
         bytes32 hash = keccak256(message);
         if (expectedSigner.code.length == 0) {
             address recovered = hash.toEthSignedMessageHash().recover(sig);
             require(recovered == expectedSigner, InvalidSignature());
         } else {
             bytes4 value = IERC1271(expectedSigner).isValidSignature(hash, sig);
-            require(
-                value == IERC1271.isValidSignature.selector,
-                InvalidSignature()
-            );
+            require(value == IERC1271.isValidSignature.selector, InvalidSignature());
         }
     }
 
-    function _checkAndVaultSwap(
-        address sender,
-        address receiver,
-        ITradingStructs.Allocation memory alloc
-    ) internal virtual {
+    function _checkAndVaultSwap(address sender, address receiver, ITradingStructs.Allocation memory alloc)
+        internal
+        virtual
+    {
         uint256 balance = _balances[sender][alloc.asset];
-        require(
-            balance >= alloc.amount,
-            InsufficientBalance(alloc.asset, alloc.amount, balance)
-        );
+        require(balance >= alloc.amount, InsufficientBalance(alloc.asset, alloc.amount, balance));
 
         _balances[sender][alloc.asset] -= alloc.amount;
         _balances[receiver][alloc.asset] += alloc.amount;
     }
 
-    function _checkAndVaultSendAccount(
-        address sender,
-        address receiver,
-        ITradingStructs.Allocation memory alloc
-    ) internal virtual {
+    function _checkAndVaultSendAccount(address sender, address receiver, ITradingStructs.Allocation memory alloc)
+        internal
+        virtual
+    {
         uint256 balance = _balances[sender][alloc.asset];
-        require(
-            balance >= alloc.amount,
-            InsufficientBalance(alloc.asset, alloc.amount, balance)
-        );
+        require(balance >= alloc.amount, InsufficientBalance(alloc.asset, alloc.amount, balance));
 
         _balances[sender][alloc.asset] -= alloc.amount;
         _balances[receiver][alloc.asset] += alloc.amount;
     }
 
-    function _accountSendVault(
-        address sender,
-        address receiver,
-        ITradingStructs.Allocation memory alloc
-    ) internal virtual {
-        IERC20(alloc.asset).safeTransferFrom(
-            sender,
-            address(this),
-            alloc.amount
-        );
+    function _accountSendVault(address sender, address receiver, ITradingStructs.Allocation memory alloc)
+        internal
+        virtual
+    {
+        IERC20(alloc.asset).safeTransferFrom(sender, address(this), alloc.amount);
         _balances[receiver][alloc.asset] += alloc.amount;
     }
 
-    function _accountSwap(
-        address sender,
-        address receiver,
-        ITradingStructs.Allocation memory alloc
-    ) internal virtual {
+    function _accountSwap(address sender, address receiver, ITradingStructs.Allocation memory alloc) internal virtual {
         IERC20(alloc.asset).safeTransferFrom(sender, receiver, alloc.amount);
     }
 
@@ -270,34 +206,15 @@ contract TradingVault is ITradingVault, ReentrancyGuard, Ownable2Step {
     ) internal {
         for (uint256 i = 0; i < senderGives.length; i++) {
             ITradingStructs.Funding memory senderFunding = senderGives[i];
-            if (
-                senderFunding.source ==
-                ITradingStructs.FundingLocation.TradingVault
-            ) {
-                if (
-                    receiverFD == ITradingStructs.FundingLocation.TradingVault
-                ) {
-                    _checkAndVaultSwap(
-                        sender,
-                        receiver,
-                        senderFunding.allocation
-                    );
+            if (senderFunding.source == ITradingStructs.FundingLocation.TradingVault) {
+                if (receiverFD == ITradingStructs.FundingLocation.TradingVault) {
+                    _checkAndVaultSwap(sender, receiver, senderFunding.allocation);
                 } else {
-                    _checkAndVaultSendAccount(
-                        sender,
-                        receiver,
-                        senderFunding.allocation
-                    );
+                    _checkAndVaultSendAccount(sender, receiver, senderFunding.allocation);
                 }
             } else {
-                if (
-                    receiverFD == ITradingStructs.FundingLocation.TradingVault
-                ) {
-                    _accountSendVault(
-                        sender,
-                        receiver,
-                        senderFunding.allocation
-                    );
+                if (receiverFD == ITradingStructs.FundingLocation.TradingVault) {
+                    _accountSendVault(sender, receiver, senderFunding.allocation);
                 } else {
                     _accountSwap(sender, receiver, senderFunding.allocation);
                 }

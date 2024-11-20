@@ -83,16 +83,8 @@ interface ITradingStructs {
  * @notice An ownerful implementation of a trading terminal that allows to start and end trading sessions, settle traders and liquidate.
  */
 interface ITradingVault {
-    event Deposited(
-        address indexed user,
-        address indexed token,
-        uint256 amount
-    );
-    event Withdrawn(
-        address indexed user,
-        address indexed token,
-        uint256 amount
-    );
+    event Deposited(address indexed user, address indexed token, uint256 amount);
+    event Withdrawn(address indexed user, address indexed token, uint256 amount);
 
     event Settled(address indexed trader, uint256 nonce);
     event Liquidated(address indexed trader, uint256 nonce);
@@ -100,11 +92,7 @@ interface ITradingVault {
     error InvalidAddress();
     error IncorrectValue();
     error InvalidAmount();
-    error InsufficientBalance(
-        address token,
-        uint256 required,
-        uint256 available
-    );
+    error InsufficientBalance(address token, uint256 required, uint256 available);
     error NativeTransferFailed();
 
     error InvalidSignature();
@@ -112,32 +100,17 @@ interface ITradingVault {
     error InvalidFundingLocation();
     error InvalidAssetOutcome();
 
-    function balanceOf(
-        address user,
-        address token
-    ) external view returns (uint256);
+    function balanceOf(address user, address token) external view returns (uint256);
 
-    function balancesOfTokens(
-        address user,
-        address[] calldata tokens
-    ) external view returns (uint256[] memory);
+    function balancesOfTokens(address user, address[] calldata tokens) external view returns (uint256[] memory);
 
     // NOTE: added a possibility to batch-deposit
     function deposit(ITradingStructs.Intent calldata intent) external payable;
 
-    function withdraw(
-        ITradingStructs.Intent calldata intent,
-        bytes calldata brokerSig
-    ) external;
+    function withdraw(ITradingStructs.Intent calldata intent, bytes calldata brokerSig) external;
 
-    function settle(
-        ITradingStructs.Outcome calldata outcome,
-        bytes calldata brokerSig
-    ) external;
+    function settle(ITradingStructs.Outcome calldata outcome, bytes calldata brokerSig) external;
 
     /// @param brokerSig Broker signature over the incremented nonce of a latest settlement (either completed or liquidated)
-    function liquidate(
-        ITradingStructs.Outcome calldata outcome,
-        bytes calldata brokerSig
-    ) external;
+    function liquidate(ITradingStructs.Outcome calldata outcome, bytes calldata brokerSig) external;
 }
