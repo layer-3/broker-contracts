@@ -14,6 +14,8 @@ interface IAuthorize {
      */
     error Unauthorized(address user, address token, uint256 amount);
 
+    // NOTE: `view` modifier was removed to allow for better flexibility of authorizer contracts.
+    // On the other hand, Vault logic has not been changed to allow for compatibility with already deployed contracts.
     /**
      * @dev Authorizes actions based on the owner, token, and amount.
      * @param owner The address of the token owner.
@@ -21,5 +23,5 @@ interface IAuthorize {
      * @param amount The amount of tokens to be authorized.
      * @return True if the action is authorized, false otherwise.
      */
-    function authorize(address owner, address token, uint256 amount) external view returns (bool);
+    function authorize(address owner, address token, uint256 amount) external returns (bool);
 }
