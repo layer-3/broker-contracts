@@ -107,9 +107,9 @@ contract LiteVault is IVault, IAuthorizable, ReentrancyGuard, Ownable2Step {
             revert InsufficientBalance(token, amount, currentBalance);
         }
         if (
+            // TODO: change method signature to pass `data` as a parameter, that an authorizer can decode and make a decision
             !_isWithdrawalGracePeriodActive(
                 latestSetAuthorizerTimestamp, uint64(block.timestamp), WITHDRAWAL_GRACE_PERIOD
-                // TODO: change method signature to pass `data` as a parameter, that an authorizer can decode and make a decision
             ) && !authorizer.authorize(msg.sender, token, amount)
         ) {
             revert IAuthorize.Unauthorized(msg.sender, token, amount);

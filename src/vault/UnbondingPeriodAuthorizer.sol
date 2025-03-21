@@ -24,11 +24,7 @@ contract UnbondingPeriodAuthorizer is IAuthorize, Ownable2Step {
      * @param currentTimestamp The current timestamp.
      * @param unbondingPeriod The required unbonding period.
      */
-    error UnbondingPeriodNotExpired(
-        uint64 requestTimestamp,
-        uint64 currentTimestamp,
-        uint64 unbondingPeriod
-    );
+    error UnbondingPeriodNotExpired(uint64 requestTimestamp, uint64 currentTimestamp, uint64 unbondingPeriod);
 
     /**
      * @notice Error thrown when the withdrawal has already been requested.
@@ -61,11 +57,7 @@ contract UnbondingPeriodAuthorizer is IAuthorize, Ownable2Step {
      * @param token The address of the token to withdraw.
      * @param unbondingPeriod The unbonding period chosen for this withdrawal request.
      */
-    event UnbondingRequested(
-        address indexed user,
-        address indexed token,
-        uint64 unbondingPeriod
-    );
+    event UnbondingRequested(address indexed user, address indexed token, uint64 unbondingPeriod);
 
     /**
      * @notice Event emitted when an unbonding period has passed and the withdrawal is authorized.
@@ -95,18 +87,14 @@ contract UnbondingPeriodAuthorizer is IAuthorize, Ownable2Step {
     EnumerableSet.UintSet internal _supportedUnbondingPeriods;
 
     // Mapping of user address to token address to withdrawal request
-    mapping(address user => mapping(address token => UnbondingRequest request))
-        internal _unbondingRequests;
+    mapping(address user => mapping(address token => UnbondingRequest request)) internal _unbondingRequests;
 
     /**
      * @dev Constructor sets the initial owner of the contract and enables the provided unbonding periods.
      * @param owner The address of the owner.
      * @param supportedUnbondingPeriods Array of unbonding periods to be initially supported.
      */
-    constructor(
-        address owner,
-        uint64[] memory supportedUnbondingPeriods
-    ) Ownable(owner) {
+    constructor(address owner, uint64[] memory supportedUnbondingPeriods) Ownable(owner) {
         for (uint256 i = 0; i < supportedUnbondingPeriods.length; i++) {
             uint64 period = supportedUnbondingPeriods[i];
             require(period > 0, InvalidUnbondingPeriod());
@@ -120,9 +108,7 @@ contract UnbondingPeriodAuthorizer is IAuthorize, Ownable2Step {
      * @param unbondingPeriod The unbonding period to check.
      * @return True if the unbonding period is supported, false otherwise.
      */
-    function isUnbondingPeriodSupported(
-        uint64 unbondingPeriod
-    ) external view returns (bool) {
+    function isUnbondingPeriodSupported(uint64 unbondingPeriod) external view returns (bool) {
         return _supportedUnbondingPeriods.contains(unbondingPeriod);
     }
 
@@ -141,19 +127,13 @@ contract UnbondingPeriodAuthorizer is IAuthorize, Ownable2Step {
      * @return requestTimestamp The timestamp when the withdrawal was requested.
      * @return unbondingPeriod The unbonding period chosen for this withdrawal request.
      */
-    function getUnbondingRequest(
-        address user,
-        address token
-    )
+    function getUnbondingRequest(address user, address token)
         external
         view
         returns (uint64 requestTimestamp, uint64 unbondingPeriod)
     {
         UnbondingRequest memory request = _unbondingRequests[user][token];
-        return (
-            request.requestTimestamp,
-            request.unbondingPeriod
-        );
+        return (request.requestTimestamp, request.unbondingPeriod);
     }
 
     /**
@@ -162,10 +142,7 @@ contract UnbondingPeriodAuthorizer is IAuthorize, Ownable2Step {
      * @param token The address of the token.
      * @return True if the user has an active unbonding request, false otherwise.
      */
-    function hasActiveUnbondingRequest(
-        address user,
-        address token
-    ) external view returns (bool) {
+    function hasActiveUnbondingRequest(address user, address token) external view returns (bool) {
         return _unbondingRequests[user][token].requestTimestamp != 0;
     }
 
@@ -174,10 +151,7 @@ contract UnbondingPeriodAuthorizer is IAuthorize, Ownable2Step {
      * @param unbondingPeriod The unbonding period to update.
      * @param isSupported Whether the unbonding period should be supported.
      */
-    function setUnbondingPeriodStatus(
-        uint64 unbondingPeriod,
-        bool isSupported
-    ) external onlyOwner {
+    function setUnbondingPeriodStatus(uint64 unbondingPeriod, bool isSupported) external onlyOwner {
         require(unbondingPeriod > 0, InvalidUnbondingPeriod());
 
         if (isSupported) {
@@ -195,25 +169,16 @@ contract UnbondingPeriodAuthorizer is IAuthorize, Ownable2Step {
      * @param token The address of the token to withdraw.
      * @param unbondingPeriod The unbonding period to use for this withdrawal request.
      */
-    function requestUnbonding(
-        address token,
-        uint64 unbondingPeriod
-    ) public {
-        require(
-            _supportedUnbondingPeriods.contains(unbondingPeriod),
-            UnsupportedUnbondingPeriod(unbondingPeriod)
-        );
+    function requestUnbonding(address token, uint64 unbondingPeriod) public {
+        require(_supportedUnbondingPeriods.contains(unbondingPeriod), UnsupportedUnbondingPeriod(unbondingPeriod));
 
         require(
-            _unbondingRequests[msg.sender][token].requestTimestamp == 0,
-            UnbondingAlreadyRequested(msg.sender, token)
+            _unbondingRequests[msg.sender][token].requestTimestamp == 0, UnbondingAlreadyRequested(msg.sender, token)
         );
 
         address account = msg.sender;
-        _unbondingRequests[account][token] = UnbondingRequest({
-            requestTimestamp: uint64(block.timestamp),
-            unbondingPeriod: unbondingPeriod
-        });
+        _unbondingRequests[account][token] =
+            UnbondingRequest({requestTimestamp: uint64(block.timestamp), unbondingPeriod: unbondingPeriod});
 
         emit UnbondingRequested(account, token, unbondingPeriod);
     }
@@ -234,21 +199,13 @@ contract UnbondingPeriodAuthorizer is IAuthorize, Ownable2Step {
         UnbondingRequest memory request = _unbondingRequests[owner][token];
 
         // Check if withdrawal was requested
-        require(
-            request.requestTimestamp != 0,
-            UnbondingNotRequested(owner, token)
-        );
+        require(request.requestTimestamp != 0, UnbondingNotRequested(owner, token));
 
         // Check if unbonding period has passed
         // Note: We don't check if the unbonding period is still supported
         require(
-            uint64(block.timestamp) >=
-                request.requestTimestamp + request.unbondingPeriod,
-            UnbondingPeriodNotExpired(
-                request.requestTimestamp,
-                uint64(block.timestamp),
-                request.unbondingPeriod
-            )
+            uint64(block.timestamp) >= request.requestTimestamp + request.unbondingPeriod,
+            UnbondingPeriodNotExpired(request.requestTimestamp, uint64(block.timestamp), request.unbondingPeriod)
         );
 
         // NOTE: this logic is put as side-effect as there is no other way to do it in the current Vault-Authorizer architecture

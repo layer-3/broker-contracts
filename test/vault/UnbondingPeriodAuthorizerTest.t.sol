@@ -253,16 +253,15 @@ contract UnbondingPeriodAuthorizerTest_requestUnbonding is UnbondingPeriodAuthor
 
         // Request again
         vm.prank(user);
-        vm.expectRevert(abi.encodeWithSelector(UnbondingPeriodAuthorizer.UnbondingAlreadyRequested.selector, user, address(token)));
+        vm.expectRevert(
+            abi.encodeWithSelector(UnbondingPeriodAuthorizer.UnbondingAlreadyRequested.selector, user, address(token))
+        );
         authorizer.requestUnbonding(address(token), 7 days);
     }
 
     function test_requestUnbonding_revert_whenPeriodIsUnsupported() public {
         vm.expectRevert(
-            abi.encodeWithSelector(
-                UnbondingPeriodAuthorizer.UnsupportedUnbondingPeriod.selector,
-                uint64(14 days)
-            )
+            abi.encodeWithSelector(UnbondingPeriodAuthorizer.UnsupportedUnbondingPeriod.selector, uint64(14 days))
         );
 
         vm.prank(user);
@@ -272,6 +271,7 @@ contract UnbondingPeriodAuthorizerTest_requestUnbonding is UnbondingPeriodAuthor
 
 contract UnbondingPeriodAuthorizerTest_authorize is UnbondingPeriodAuthorizerTestBase {
     uint64 unbondingPeriod = 7 days;
+
     function setUp() public override {
         super.setUp();
 
@@ -322,11 +322,7 @@ contract UnbondingPeriodAuthorizerTest_authorize is UnbondingPeriodAuthorizerTes
 
     function test_authorize_revert_whenNoRequestExists() public {
         vm.expectRevert(
-            abi.encodeWithSelector(
-                UnbondingPeriodAuthorizer.UnbondingNotRequested.selector,
-                user,
-                address(0)
-            )
+            abi.encodeWithSelector(UnbondingPeriodAuthorizer.UnbondingNotRequested.selector, user, address(0))
         );
 
         authorizer.authorize(user, address(0), 100);
