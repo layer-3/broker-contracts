@@ -74,6 +74,9 @@ contract LiteVault is IVault, IAuthorizable, ReentrancyGuard, Ownable2Step {
         emit AuthorizerChanged(newAuthorizer);
     }
 
+    // TODO: add `customData` as parameter
+    // TODO: add a call to authorizer for better flexibility
+    // TODO: change `msg.sender` to `account` for more flexibility
     /**
      * @dev Deposits tokens or ETH into the vault.
      * @param token The address of the token to deposit. Use address(0) for ETH.
@@ -92,6 +95,7 @@ contract LiteVault is IVault, IAuthorizable, ReentrancyGuard, Ownable2Step {
         emit Deposited(msg.sender, token, amount);
     }
 
+    // TODO: add `customData` as parameter
     /**
      * @dev Withdraws tokens or ETH from the vault.
      * @param token The address of the token to withdraw. Use address(0) for ETH.
@@ -105,6 +109,7 @@ contract LiteVault is IVault, IAuthorizable, ReentrancyGuard, Ownable2Step {
         if (
             !_isWithdrawalGracePeriodActive(
                 latestSetAuthorizerTimestamp, uint64(block.timestamp), WITHDRAWAL_GRACE_PERIOD
+                // TODO: change method signature to pass `data` as a parameter, that an authorizer can decode and make a decision
             ) && !authorizer.authorize(msg.sender, token, amount)
         ) {
             revert IAuthorize.Unauthorized(msg.sender, token, amount);
