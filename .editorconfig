@@ -1,0 +1,18 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.sol]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+# Forge formatter typically puts opening braces on the same line:
+curly_bracket_next_line = false
+# Space after control statements like if, for, while:
+spaces_around_operators = true
+spaces_around_brackets = false
+indent_brace_style = K&R
