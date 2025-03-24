@@ -238,7 +238,7 @@ contract UnbondingPeriodAuthorizerTest_requestUnbonding is UnbondingPeriodAuthor
 
     function test_requestUnbonding_emitsEvent() public {
         vm.expectEmit(true, true, true, true);
-        emit UnbondingPeriodAuthorizer.UnbondingRequested(user, address(token), 7 days);
+        emit UnbondingPeriodAuthorizer.UnbondingRequested(user, address(token), 7 days, uint64(TIME) + 7 days);
 
         vm.prank(user);
         authorizer.requestUnbonding(address(token), 7 days);
