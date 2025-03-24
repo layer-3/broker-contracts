@@ -58,7 +58,9 @@ contract UnbondingPeriodAuthorizer is IAuthorize, Ownable2Step {
      * @param unbondingPeriod The unbonding period chosen for this withdrawal request.
      * @param unbondingTimestamp The timestamp when the unbonding period will expire.
      */
-    event UnbondingRequested(address indexed user, address indexed token, uint64 unbondingPeriod, uint64 unbondingTimestamp);
+    event UnbondingRequested(
+        address indexed user, address indexed token, uint64 unbondingPeriod, uint64 unbondingTimestamp
+    );
 
     /**
      * @notice Event emitted when an unbonding period has passed and the withdrawal is authorized.
