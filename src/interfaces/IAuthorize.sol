@@ -23,5 +23,5 @@ interface IAuthorize {
      * @param amount The amount of tokens to be authorized.
      * @return True if the action is authorized, false otherwise.
      */
-    function authorize(address owner, address token, uint256 amount) external returns (bool);
+    function authorize(address owner, address token, uint256 amount) external view returns (bool);
 }

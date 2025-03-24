@@ -287,24 +287,6 @@ contract UnbondingPeriodAuthorizerTest_authorize is UnbondingPeriodAuthorizerTes
         assertTrue(authorized);
     }
 
-    function test_authorize_deletesRequest_whenAuthorized() public {
-        vm.warp(TIME + unbondingPeriod + 1);
-
-        bool authorized = authorizer.authorize(user, address(token), 100);
-
-        assertTrue(authorized);
-        assertFalse(authorizer.hasActiveUnbondingRequest(user, address(token)));
-    }
-
-    function test_authorize_emitsEvent_whenAuthorized() public {
-        vm.warp(TIME + unbondingPeriod + 1);
-
-        vm.expectEmit(true, true, true, true);
-        emit UnbondingPeriodAuthorizer.UnbondingCompleted(user, address(token));
-
-        authorizer.authorize(user, address(token), 100);
-    }
-
     function test_authorize_revert_whenUnbondingPeriodNotExpired() public {
         vm.warp(TIME + unbondingPeriod - 1 hours);
 
@@ -326,5 +308,160 @@ contract UnbondingPeriodAuthorizerTest_authorize is UnbondingPeriodAuthorizerTes
         );
 
         authorizer.authorize(user, address(0), 100);
+    }
+}
+
+contract UnbondingPeriodAuthorizerTest_completeUnbondingRequest is UnbondingPeriodAuthorizerTestBase {
+    uint64 unbondingPeriod = 7 days;
+
+    function setUp() public override {
+        super.setUp();
+
+        vm.prank(user);
+        authorizer.requestUnbonding(address(token), unbondingPeriod);
+    }
+
+    function test_completeUnbondingRequest_deletesRequest() public {
+        assertTrue(authorizer.hasActiveUnbondingRequest(user, address(token)), "Request should exist before removal");
+
+        vm.warp(TIME + unbondingPeriod + 1);
+
+        vm.prank(user);
+        authorizer.completeUnbondingRequest(address(token));
+
+        assertFalse(
+            authorizer.hasActiveUnbondingRequest(user, address(token)), "Request should be deleted after removal"
+        );
+    }
+
+    function test_completeUnbondingRequest_emitsEvent() public {
+        vm.warp(TIME + unbondingPeriod + 1);
+
+        vm.expectEmit(true, true, true, true);
+        emit UnbondingPeriodAuthorizer.UnbondingCompleted(user, address(token));
+
+        vm.prank(user);
+        authorizer.completeUnbondingRequest(address(token));
+    }
+
+    function test_completeUnbondingRequest_revert_whenUnbondingPeriodNotExpired() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                UnbondingPeriodAuthorizer.UnbondingPeriodNotExpired.selector,
+                uint64(TIME),
+                uint64(block.timestamp),
+                uint64(unbondingPeriod)
+            )
+        );
+        vm.prank(user);
+        authorizer.completeUnbondingRequest(address(token));
+    }
+
+    function test_completeUnbondingRequest_revert_ifNoRequestExists() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(UnbondingPeriodAuthorizer.UnbondingNotRequested.selector, user, address(0))
+        );
+        vm.prank(user);
+        authorizer.completeUnbondingRequest(address(0));
+    }
+}
+
+contract UnbondingPeriodAuthorizerTest_completeUnbondingRequests is UnbondingPeriodAuthorizerTestBase {
+    TestERC20 token2;
+    TestERC20 token3;
+    uint64 unbondingPeriod = 7 days;
+
+    function setUp() public override {
+        super.setUp();
+
+        token2 = new TestERC20("Test2", "TST2", 18, type(uint256).max);
+        token3 = new TestERC20("Test3", "TST3", 18, type(uint256).max);
+
+        vm.startPrank(user);
+        authorizer.requestUnbonding(address(token), unbondingPeriod);
+        authorizer.requestUnbonding(address(token2), unbondingPeriod);
+        authorizer.requestUnbonding(address(token3), unbondingPeriod);
+        vm.stopPrank();
+    }
+
+    function test_completeUnbondingRequests_deletesMultipleRequests() public {
+        assertTrue(authorizer.hasActiveUnbondingRequest(user, address(token)), "Request for token1 should exist");
+        assertTrue(authorizer.hasActiveUnbondingRequest(user, address(token2)), "Request for token2 should exist");
+        assertTrue(authorizer.hasActiveUnbondingRequest(user, address(token3)), "Request for token3 should exist");
+
+        address[] memory tokens = new address[](3);
+        tokens[0] = address(token);
+        tokens[1] = address(token2);
+        tokens[2] = address(token3);
+
+        vm.warp(TIME + unbondingPeriod + 1);
+
+        vm.prank(user);
+        authorizer.completeUnbondingRequests(tokens);
+
+        assertFalse(authorizer.hasActiveUnbondingRequest(user, address(token)), "Request for token1 should be deleted");
+        assertFalse(authorizer.hasActiveUnbondingRequest(user, address(token2)), "Request for token2 should be deleted");
+        assertFalse(authorizer.hasActiveUnbondingRequest(user, address(token3)), "Request for token3 should be deleted");
+    }
+
+    function test_completeUnbondingRequests_emitsEventsForEachToken() public {
+        address[] memory tokens = new address[](2);
+        tokens[0] = address(token);
+        tokens[1] = address(token2);
+
+        vm.warp(TIME + unbondingPeriod + 1);
+
+        vm.expectEmit(true, true, true, true);
+        emit UnbondingPeriodAuthorizer.UnbondingCompleted(user, address(token));
+
+        vm.expectEmit(true, true, true, true);
+        emit UnbondingPeriodAuthorizer.UnbondingCompleted(user, address(token2));
+
+        vm.prank(user);
+        authorizer.completeUnbondingRequests(tokens);
+    }
+
+    function test_completeUnbondingRequests_worksWithEmptyArray() public {
+        address[] memory tokens = new address[](0);
+
+        vm.warp(TIME + unbondingPeriod + 1);
+
+        // Should not revert with empty array
+        vm.prank(user);
+        authorizer.completeUnbondingRequests(tokens);
+
+        // Verify no requests were deleted
+        assertTrue(authorizer.hasActiveUnbondingRequest(user, address(token)), "Request for token1 should still exist");
+        assertTrue(authorizer.hasActiveUnbondingRequest(user, address(token2)), "Request for token2 should still exist");
+        assertTrue(authorizer.hasActiveUnbondingRequest(user, address(token3)), "Request for token3 should still exist");
+    }
+
+    function test_completeUnbondingRequests_revert_ifAnyTokenHasNoRequest() public {
+        address[] memory tokens = new address[](2);
+        tokens[0] = address(token);
+        tokens[1] = address(0); // No request for this address
+
+        vm.warp(TIME + unbondingPeriod + 1);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(UnbondingPeriodAuthorizer.UnbondingNotRequested.selector, user, address(0))
+        );
+        vm.prank(user);
+        authorizer.completeUnbondingRequests(tokens);
+    }
+
+    function test_completeUnbondingRequests_revert_ifTokenRequestedTwice() public {
+        address[] memory tokens = new address[](3);
+        tokens[0] = address(token);
+        tokens[1] = address(token2);
+        tokens[2] = address(token); // Duplicate
+
+        vm.warp(TIME + unbondingPeriod + 1);
+
+        vm.prank(user);
+        vm.expectRevert(
+            abi.encodeWithSelector(UnbondingPeriodAuthorizer.UnbondingNotRequested.selector, user, address(token))
+        );
+        authorizer.completeUnbondingRequests(tokens);
     }
 }

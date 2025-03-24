@@ -150,6 +150,33 @@ contract UnbondingPeriodAuthorizer is IAuthorize, Ownable2Step {
     }
 
     /**
+     * @notice Check if a withdrawal is authorized.
+     * @dev Returns true if the unbonding period has passed since the withdrawal request.
+     * @param owner The address of the token owner.
+     * @param token The address of the token.
+     * @return True if the withdrawal is authorized, false otherwise.
+     */
+    function authorize(
+        address owner,
+        address token,
+        uint256 // amount - not used
+    ) public view override returns (bool) {
+        UnbondingRequest memory request = _unbondingRequests[owner][token];
+
+        // Check if withdrawal was requested
+        require(request.requestTimestamp != 0, UnbondingNotRequested(owner, token));
+
+        // Check if unbonding period has passed
+        // Note: We don't check if the unbonding period is still supported
+        require(
+            uint64(block.timestamp) >= request.requestTimestamp + request.unbondingPeriod,
+            UnbondingPeriodNotExpired(request.requestTimestamp, uint64(block.timestamp), request.unbondingPeriod)
+        );
+
+        return true;
+    }
+
+    /**
      * @notice Updates the status of an unbonding period.
      * @param unbondingPeriod The unbonding period to update.
      * @param isSupported Whether the unbonding period should be supported.
@@ -187,35 +214,39 @@ contract UnbondingPeriodAuthorizer is IAuthorize, Ownable2Step {
     }
 
     /**
-     * @notice Check if a withdrawal is authorized.
-     * @dev Returns true if the unbonding period has passed since the withdrawal request.
-     *      As a side effect, this function deletes the unbonding request if authorized.
-     * @param owner The address of the token owner.
-     * @param token The address of the token.
-     * @return True if the withdrawal is authorized, false otherwise.
+     * @notice Completes an unbonding request after the unbonding period has passed.
+     * @dev Verifies the unbonding period has passed before completing the request.
+     *      It cleans up the request state and emits the UnbondingCompleted event.
+     * @param token The address of the token for which to complete the unbonding request.
      */
-    function authorize(
-        address owner,
-        address token,
-        uint256 // amount - not used
-    ) external override returns (bool) {
-        UnbondingRequest memory request = _unbondingRequests[owner][token];
+    function completeUnbondingRequest(address token) external {
+        _completeUnbondingRequest(msg.sender, token);
+    }
 
-        // Check if withdrawal was requested
-        require(request.requestTimestamp != 0, UnbondingNotRequested(owner, token));
+    /**
+     * @notice Completes multiple unbonding requests in a single transaction after their unbonding periods have passed.
+     * @dev Verifies the unbonding period has passed for each token before completing the request.
+     *      Will revert if any of the requests is not authorized (unbonding period not passed).
+     * @param tokens Array of token addresses for which to complete unbonding requests.
+     */
+    function completeUnbondingRequests(address[] calldata tokens) external {
+        address account = msg.sender;
+        for (uint256 i = 0; i < tokens.length; i++) {
+            address token = tokens[i];
+            _completeUnbondingRequest(account, token);
+        }
+    }
 
-        // Check if unbonding period has passed
-        // Note: We don't check if the unbonding period is still supported
-        require(
-            uint64(block.timestamp) >= request.requestTimestamp + request.unbondingPeriod,
-            UnbondingPeriodNotExpired(request.requestTimestamp, uint64(block.timestamp), request.unbondingPeriod)
-        );
-
-        // NOTE: this logic is put as side-effect as there is no other way to do it in the current Vault-Authorizer architecture
-        // Remove the unbonding request
-        delete _unbondingRequests[owner][token];
-        emit UnbondingCompleted(owner, token);
-
-        return true;
+    /**
+     * @dev Internal helper function to complete an unbonding request for a specific user and token.
+     * It verifies the unbonding period has passed, deletes the request from storage and emits the UnbondingCompleted event.
+     * @param account The address of the user who made the unbonding request.
+     * @param token The address of the token for which to complete the unbonding request.
+     */
+    function _completeUnbondingRequest(address account, address token) internal {
+        // Verify the unbonding period has passed
+        authorize(account, token, 0);
+        delete _unbondingRequests[account][token];
+        emit UnbondingCompleted(account, token);
     }
 }
