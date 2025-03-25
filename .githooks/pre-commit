@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# Format all staged Solidity files using forge fmt
+staged_sol_files=$(git diff --cached --name-only --diff-filter=ACMR | grep "\.sol$" || true)
+
+if [ -n "$staged_sol_files" ]; then
+  echo "Formatting Solidity files with forge fmt..."
+  # Format all staged Solidity files
+  forge fmt $staged_sol_files
+  
+  # Add the formatted files back to the staging area
+  git add $staged_sol_files
+fi
+
+exit 0

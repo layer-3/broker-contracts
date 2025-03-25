@@ -14,6 +14,8 @@ interface IAuthorize {
      */
     error Unauthorized(address user, address token, uint256 amount);
 
+    // NOTE: `view` modifier was removed to allow for better flexibility of authorizer contracts.
+    // On the other hand, Vault logic has not been changed to allow for compatibility with already deployed contracts.
     /**
      * @dev Authorizes actions based on the owner, token, and amount.
      * @param owner The address of the token owner.
