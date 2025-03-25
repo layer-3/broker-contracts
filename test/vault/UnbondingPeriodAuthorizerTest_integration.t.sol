@@ -3,10 +3,10 @@ pragma solidity 0.8.26;
 
 import {Test, Vm} from "forge-std/Test.sol";
 
-import {LiteVault} from "../../src/vault/LiteVault.sol";
-import {UnbondingPeriodAuthorizer} from "../../src/vault/UnbondingPeriodAuthorizer.sol";
-import {TestERC20} from "../TestERC20.sol";
 import {IAuthorize} from "../../src/interfaces/IAuthorize.sol";
+import {LiteVault} from "../../src/vault/LiteVault.sol";
+import {TestERC20} from "../TestERC20.sol";
+import {UnbondingPeriodAuthorizer} from "../../src/vault/UnbondingPeriodAuthorizer.sol";
 
 uint256 constant TIME = 1716051867;
 

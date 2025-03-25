@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {IAuthorize} from "../interfaces/IAuthorize.sol";
-
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
+import {IAuthorize} from "../interfaces/IAuthorize.sol";
 
 /**
  * @title UnbondingPeriodAuthorizer
@@ -160,7 +160,7 @@ contract UnbondingPeriodAuthorizer is IAuthorize, Ownable2Step {
         address owner,
         address token,
         uint256 // amount - not used
-    ) public view override returns (bool) {
+    ) public view returns (bool) {
         UnbondingRequest memory request = _unbondingRequests[owner][token];
 
         // Check if withdrawal was requested
