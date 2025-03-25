@@ -245,6 +245,7 @@ contract UnbondingPeriodAuthorizer is IAuthorize, Ownable2Step {
      */
     function _completeUnbondingRequest(address account, address token) internal {
         // Verify the unbonding period has passed
+        // NOTE: authorization amount does not matter here
         authorize(account, token, 0);
         delete _unbondingRequests[account][token];
         emit UnbondingCompleted(account, token);
